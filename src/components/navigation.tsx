@@ -4,7 +4,9 @@ import {
   Home, 
   Search, 
   Gamepad2, 
-  BookOpen, 
+  BookOpen,
+  Shield, 
+  PlayCircle,
 } from "lucide-react";
 
 interface NavigationProps {
@@ -36,6 +38,22 @@ export function Navigation({ currentPage }: NavigationProps) {
             </div>
           </div>
           <div className="flex gap-2">
+{currentPage !== 'home' && (
+<Button asChild variant="outline" size="sm">
+<Link href="https://rutube.ru/video/a2652268ba8a379f99c77eecb5ac7745/" className="flex items-center gap-1">
+<PlayCircle className="w-3 h-3" />
+Видеоинструкция
+</Link>
+</Button>
+)}
+            {currentPage !== 'home' && (
+              <Button asChild variant="outline" size="sm">
+                <Link href="https://t.me/loothub_support" className="flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  Поддержка
+                </Link>
+              </Button>
+            )}
             {currentPage !== 'home' && (
               <Button asChild variant="outline" size="sm">
                 <Link href="/" className="flex items-center gap-1">

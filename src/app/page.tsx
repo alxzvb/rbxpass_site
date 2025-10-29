@@ -26,6 +26,7 @@ export default function CodeActivationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activationResult, setActivationResult] = useState<any>(null);
 
   // Валидация только для нового формата
