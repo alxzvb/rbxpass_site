@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from 'next/image';
 import { Home, Search, BookOpen, Shield, PlayCircle, Menu } from "lucide-react";
 import {
   Sheet,
@@ -30,8 +31,14 @@ export function Navigation({ currentPage }: NavigationProps) {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">🎮</span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <Image
+                src="/images/logo.jpg" 
+                alt="RBXPass"
+                width={100} 
+                height={40} 
+                className="primary-logo w-10 h-10 rounded-lg"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">RBXPass</h1>
