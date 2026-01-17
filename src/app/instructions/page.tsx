@@ -209,79 +209,79 @@ export default function InstructionsPage() {
                   <tbody>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 101</td>
-                      <td className="border border-gray-300 px-4 py-2">131</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(101 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 201</td>
-                      <td className="border border-gray-300 px-4 py-2">261</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(201 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 301</td>
-                      <td className="border border-gray-300 px-4 py-2">391</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(301 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 401</td>
-                      <td className="border border-gray-300 px-4 py-2">521</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(401 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 501</td>
-                      <td className="border border-gray-300 px-4 py-2">651</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(501 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 601</td>
-                      <td className="border border-gray-300 px-4 py-2">781</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(601 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 701</td>
-                      <td className="border border-gray-300 px-4 py-2">911</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(701 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 801</td>
-                      <td className="border border-gray-300 px-4 py-2">1041</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(801 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 901</td>
-                      <td className="border border-gray-300 px-4 py-2">1171</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(901 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 1001</td>
-                      <td className="border border-gray-300 px-4 py-2">1301</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(1001 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 1201</td>
-                      <td className="border border-gray-300 px-4 py-2">1561</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(1201 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 1401</td>
-                      <td className="border border-gray-300 px-4 py-2">1821</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(1401 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 1601</td>
-                      <td className="border border-gray-300 px-4 py-2">2081</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(1601 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 1701</td>
-                      <td className="border border-gray-300 px-4 py-2">2211</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(1701 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 2001</td>
-                      <td className="border border-gray-300 px-4 py-2">2601</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(2001 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 2501</td>
-                      <td className="border border-gray-300 px-4 py-2">3251</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(2501 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 3001</td>
-                      <td className="border border-gray-300 px-4 py-2">3901</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(3001 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 4501</td>
-                      <td className="border border-gray-300 px-4 py-2">5851</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(4501 / 0.7)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="border border-gray-300 px-4 py-2">Roblox 10001</td>
-                      <td className="border border-gray-300 px-4 py-2">13001</td>
+                      <td className="border border-gray-300 px-4 py-2">{Math.ceil(10001 / 0.7)}</td>
                     </tr>
                   </tbody>
                 </table>
