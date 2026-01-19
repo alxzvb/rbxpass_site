@@ -8,7 +8,8 @@ import {
   Key, 
   Upload, 
   LogOut, 
-  Settings
+  Settings,
+  Warehouse
 } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -82,6 +83,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <a href="/admin/import">
                   <Upload className="w-4 h-4" />
                   Импорт
+                </a>
+              </Button>
+              <Button 
+                asChild
+                variant="outline"
+                className="gap-2"
+              >
+                <a href="/admin/yandex">
+                  <Warehouse className="w-4 h-4" />
+                  Яндекс склад
                 </a>
               </Button>
             </nav>
