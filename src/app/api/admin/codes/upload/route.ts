@@ -31,20 +31,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "No codes provided" }, { status: 400 });
     }
 
-    const data = codeLines.map((codeText) => ({
-      productId,
-      codeText,
-      status: "available" as const,
-    }));
-
-    const result = await prisma.code.createMany({
-      data,
-      skipDuplicates: true,
-    });
+    let created = 0;
+    for (const codeText of codeLines) {
+      try {
+        await prisma.code.create({
+          data: {
+            productId,
+            codeText,
+            status: "available",
+          },
+        });
+        created++;
+      } catch (error: unknown) {
+        // Игнорируем ошибки дубликатов
+        if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+          continue;
+        }
+        throw error;
+      }
+    }
 
     return NextResponse.json({
       ok: true,
-      created: result.count,
+      created,
       total: codeLines.length,
     });
   } catch (error) {

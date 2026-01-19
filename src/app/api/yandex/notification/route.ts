@@ -87,7 +87,7 @@ export async function POST(request: Request) {
         orderId,
         type: eventType,
         eventTime,
-        payloadJson: payload as Record<string, unknown>,
+        payloadJson: JSON.parse(JSON.stringify(payload)),
       },
     });
 

@@ -93,7 +93,7 @@ export default function AdminYandex() {
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       setProducts(data.products || []);
-    } catch (err) {
+    } catch {
       setError("Ошибка загрузки продуктов");
     }
   };
@@ -104,7 +104,7 @@ export default function AdminYandex() {
       if (!res.ok) throw new Error("Failed to fetch offer maps");
       const data = await res.json();
       setOfferMaps(data.offerMaps || []);
-    } catch (err) {
+    } catch {
       setError("Ошибка загрузки привязок");
     }
   };
@@ -115,7 +115,7 @@ export default function AdminYandex() {
       if (!res.ok) throw new Error("Failed to fetch stock");
       const data = await res.json();
       setStock(data.stock || []);
-    } catch (err) {
+    } catch {
       setError("Ошибка загрузки остатков");
     }
   };
@@ -133,7 +133,7 @@ export default function AdminYandex() {
       }
       const data = await res.json();
       setDeliveryLogs(data.logs || []);
-    } catch (err) {
+    } catch {
       // Endpoint might not exist yet, that's ok
       setDeliveryLogs([]);
     }
