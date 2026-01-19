@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   CheckCircle, 
   Loader2,
@@ -218,6 +217,44 @@ export default function CodeActivationPage() {
           {step === 1 && (
             <Card className="shadow-xl border-2 border-purple-100">
               <CardContent className="space-y-6 pt-6">
+                {/* Выбор типа продукта (виден сразу) */}
+                <div className="space-y-2">
+                  <Label>Тип продукта</Label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <Button
+                      type="button"
+                      variant={productType === "roblox" ? "default" : "outline"}
+                      onClick={() => setProductType("roblox")}
+                      className="w-full"
+                    >
+                      Roblox
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={productType === "fortnite" ? "default" : "outline"}
+                      onClick={() => setProductType("fortnite")}
+                      className="w-full"
+                    >
+                      Fortnite
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={productType === "pubg" ? "default" : "outline"}
+                      onClick={() => setProductType("pubg")}
+                      className="w-full"
+                    >
+                      PUBG
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={productType === "other" ? "default" : "outline"}
+                      onClick={() => setProductType("other")}
+                      className="w-full"
+                    >
+                      Другое
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-3">
                   <Label htmlFor="code" className="text-lg font-semibold">
                     Код активации
@@ -302,20 +339,12 @@ export default function CodeActivationPage() {
                   </div>
                 </div>
 
-                {/* Выбор типа продукта */}
+                {/* Тип продукта (сводка) */}
                 <div className="space-y-2">
-                  <Label htmlFor="product-type">Тип продукта</Label>
-                  <Select value={productType} onValueChange={(value) => setProductType(value as ProductType)}>
-                    <SelectTrigger id="product-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="roblox">Roblox</SelectItem>
-                      <SelectItem value="fortnite">Fortnite</SelectItem>
-                      <SelectItem value="pubg">PUBG</SelectItem>
-                      <SelectItem value="other">Другое</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Тип продукта</Label>
+                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                    {productType === "roblox" ? "Roblox" : productType === "fortnite" ? "Fortnite" : productType === "pubg" ? "PUBG" : "Другое"}
+                  </Badge>
                 </div>
 
                 {/* Правила для Fortnite */}
