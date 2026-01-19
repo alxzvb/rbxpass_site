@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     }
 
     // Ищем код в базе
-    const codeRow = await prisma.code.findUnique({ 
+    const codeRow = await prisma.legacyCode.findUnique({ 
       where: { code: normalizedCode } 
     });
     
@@ -78,6 +78,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       ok: true, 
       nominal: codeRow.nominal,
+      productType: codeRow.product_type ?? "roblox",
       message: "Код проверен и готов к активации"
     });
     

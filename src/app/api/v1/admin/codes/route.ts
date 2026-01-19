@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   if (!verifyAdminToken(auth).ok) return new NextResponse("Unauthorized", { status: 401 });
 
   try {
-    const codes = await prisma.code.findMany({
+    const codes = await prisma.legacyCode.findMany({
       orderBy: { id: "desc" },
       take: 1000,
     });
@@ -28,11 +28,12 @@ export async function POST(request: Request) {
     code: z.string().min(1),
     nominal: z.number().min(1),
     status: z.enum(["active", "used"]).default("active"),
+    productType: z.enum(["roblox", "fortnite", "pubg", "other"]).optional().default("roblox"),
   });
 
   try {
     const body = await request.json();
-    const { code, nominal, status } = schema.parse(body);
+    const { code, nominal, status, productType } = schema.parse(body);
 
     // Проверяем формат кода
     const CODE_REGEX = /^RBX100-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     // Проверяем, не существует ли уже такой код
-    const existingCode = await prisma.code.findUnique({
+    const existingCode = await prisma.legacyCode.findUnique({
       where: { code: code.toUpperCase() }
     });
 
@@ -55,11 +56,12 @@ export async function POST(request: Request) {
       }, { status: 409 });
     }
 
-    const newCode = await prisma.code.create({
+    const newCode = await prisma.legacyCode.create({
       data: {
         code: code.toUpperCase(),
         nominal,
         status,
+        product_type: productType,
       }
     });
 
