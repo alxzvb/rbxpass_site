@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from 'next/image';
-import { Home, Search, BookOpen, Shield, PlayCircle, Menu } from "lucide-react";
+import { Home, Search, BookOpen, Shield, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -52,17 +52,6 @@ export function Navigation({ currentPage }: NavigationProps) {
                 <Link href="/" className="flex items-center gap-1">
                   <Home className="w-3 h-3" />
                   Главная
-                </Link>
-              </Button>
-            )}
-            {currentPage !== "home" && (
-              <Button asChild variant="outline" size="sm">
-                <Link
-                  href="https://rutube.ru/video/a2652268ba8a379f99c77eecb5ac7745/"
-                  className="flex items-center gap-1"
-                >
-                  <PlayCircle className="w-3 h-3" />
-                  Видеоинструкция
                 </Link>
               </Button>
             )}
@@ -132,17 +121,6 @@ export function Navigation({ currentPage }: NavigationProps) {
                       <Link href="/status" className="flex items-center gap-2">
                         <Search className="w-4 h-4" />
                         Статус
-                      </Link>
-                    </Button>
-                  )}
-                  {currentPage !== "home" && (
-                    <Button asChild variant="outline" size="sm">
-                      <Link
-                        href="https://rutube.ru/video/a2652268ba8a379f99c77eecb5ac7745/"
-                        className="flex items-center gap-2"
-                      >
-                        <PlayCircle className="w-4 h-4" />
-                        Видеоинструкция
                       </Link>
                     </Button>
                   )}

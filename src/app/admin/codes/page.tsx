@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,6 +29,7 @@ type Code = {
   nominal: number;
   status: string;
   used_at: string | null;
+  product_type?: string | null;
 };
 
 export default function AdminCodes() {
@@ -39,14 +41,24 @@ export default function AdminCodes() {
   // Форма для добавления кода
   const [newCode, setNewCode] = useState("");
   const [newNominal, setNewNominal] = useState(100);
+  const [newProductType, setNewProductType] = useState("roblox");
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Форма для генерации кодов
   const [generateCount, setGenerateCount] = useState(10);
   const [generateNominal, setGenerateNominal] = useState(100);
   const [generatePrefix, setGeneratePrefix] = useState("RBX100");
+  const [generateProductType, setGenerateProductType] = useState("roblox");
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+  
+  const updateGenerateType = (value: string) => {
+    setGenerateProductType(value);
+    if (value === "roblox") setGeneratePrefix("RBX100");
+    if (value === "fortnite") setGeneratePrefix("FNT");
+    if (value === "pubg") setGeneratePrefix("PUBG");
+    if (value === "other") setGeneratePrefix("CODE");
+  };
 
   const loadCodes = useCallback(async () => {
     setLoading(true);
@@ -83,7 +95,8 @@ export default function AdminCodes() {
         body: JSON.stringify({
           code: newCode.toUpperCase(),
           nominal: newNominal,
-          status: "active"
+          status: "active",
+          productType: newProductType
         })
       });
       
@@ -127,7 +140,8 @@ export default function AdminCodes() {
         body: JSON.stringify({
           count: generateCount,
           nominal: generateNominal,
-          prefix: generatePrefix
+          prefix: generatePrefix,
+          productType: generateProductType
         })
       });
       
@@ -243,6 +257,20 @@ export default function AdminCodes() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="generate-product-type">Игра</Label>
+                  <Select value={generateProductType} onValueChange={updateGenerateType}>
+                    <SelectTrigger id="generate-product-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="roblox">Roblox</SelectItem>
+                      <SelectItem value="fortnite">Fortnite</SelectItem>
+                      <SelectItem value="pubg">PUBG</SelectItem>
+                      <SelectItem value="other">Другое</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="generate-prefix">Префикс</Label>
                   <Input
                     id="generate-prefix"
@@ -309,6 +337,20 @@ export default function AdminCodes() {
                   onChange={(e) => setNewNominal(Number(e.target.value))}
                   min="1"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-product-type">Игра</Label>
+                <Select value={newProductType} onValueChange={setNewProductType}>
+                  <SelectTrigger id="new-product-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="roblox">Roblox</SelectItem>
+                    <SelectItem value="fortnite">Fortnite</SelectItem>
+                    <SelectItem value="pubg">PUBG</SelectItem>
+                    <SelectItem value="other">Другое</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button
                 onClick={addCode}
@@ -451,6 +493,7 @@ export default function AdminCodes() {
                   <TableRow>
                     <TableHead>Код</TableHead>
                     <TableHead>Номинал</TableHead>
+                    <TableHead>Игра</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead>Использован</TableHead>
                     <TableHead>Действия</TableHead>
@@ -465,6 +508,11 @@ export default function AdminCodes() {
                           <DollarSign className="w-4 h-4 text-green-600" />
                           <span className="font-medium">{code.nominal} Robux</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {code.product_type ?? "roblox"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 

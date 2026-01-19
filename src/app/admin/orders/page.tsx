@@ -29,6 +29,7 @@ type Order = {
   user_id: string;
   gamepass_id: string;
   gamepass_url: string;
+  product_type?: string | null;
   status: string;
   created_at: string;
 };
@@ -60,6 +61,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [productType, setProductType] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -70,13 +72,16 @@ export default function AdminOrders() {
     if (status && status !== "all") {
       params.append("status", status);
     }
+    if (productType && productType !== "all") {
+      params.append("productType", productType);
+    }
     const url = `/api/v1/admin/orders?${params.toString()}`;
     const res = await fetch(url);
     if (!res.ok) { setError("Ошибка авторизации"); return; }
     const data = await res.json();
     setOrders(data.orders);
     setLoading(false);
-  }, [q, status]);
+  }, [q, status, productType]);
 
   async function updateStatus(id: number, s: string) {
     setLoading(true);
@@ -213,7 +218,7 @@ export default function AdminOrders() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Поиск</Label>
               <div className="relative">
@@ -242,9 +247,24 @@ export default function AdminOrders() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-type-filter">Игра</Label>
+              <Select value={productType} onValueChange={setProductType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Все игры" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все игры</SelectItem>
+                  <SelectItem value="roblox">Roblox</SelectItem>
+                  <SelectItem value="fortnite">Fortnite</SelectItem>
+                  <SelectItem value="pubg">PUBG</SelectItem>
+                  <SelectItem value="other">Другое</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-end">
               <Button 
-                onClick={() => { setQ(""); setStatus("all"); }}
+                onClick={() => { setQ(""); setStatus("all"); setProductType("all"); }}
                 variant="outline"
                 className="w-full"
               >
@@ -290,6 +310,7 @@ export default function AdminOrders() {
                     <TableHead>ID</TableHead>
                     <TableHead>Код</TableHead>
                     <TableHead>Пользователь</TableHead>
+                    <TableHead>Игра</TableHead>
                     <TableHead>GamePass</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead>Дата</TableHead>
@@ -315,6 +336,9 @@ export default function AdminOrders() {
                             <div className="font-medium">{order.nickname}</div>
                             <div className="text-xs text-gray-500">ID: {order.user_id}</div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{order.product_type ?? "roblox"}</Badge>
                         </TableCell>
                         <TableCell>
                           <a 
