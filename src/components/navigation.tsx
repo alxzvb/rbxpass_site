@@ -27,7 +27,7 @@ export function Navigation({ currentPage }: NavigationProps) {
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200">
+    <nav className="bg-white/70 backdrop-blur-md shadow-sm border-b border-white/60">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3">
@@ -55,17 +55,6 @@ export function Navigation({ currentPage }: NavigationProps) {
                 </Link>
               </Button>
             )}
-            {currentPage !== "home" && (
-              <Button asChild variant="outline" size="sm">
-                <Link
-                  href="https://t.me/loothub_support"
-                  className="flex items-center gap-1"
-                >
-                  <Shield className="w-3 h-3" />
-                  Поддержка
-                </Link>
-              </Button>
-            )}
             {currentPage !== "instructions" && (
               <Button asChild variant="outline" size="sm">
                 <Link href="/instructions" className="flex items-center gap-1">
@@ -79,6 +68,17 @@ export function Navigation({ currentPage }: NavigationProps) {
                 <Link href="/status" className="flex items-center gap-1">
                   <Search className="w-3 h-3" />
                   Статус
+                </Link>
+              </Button>
+            )}
+            {currentPage !== "home" && (
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href="https://t.me/loothub_support"
+                  className="flex items-center gap-1"
+                >
+                  <Shield className="w-3 h-3" />
+                  Поддержка
                 </Link>
               </Button>
             )}

@@ -8,12 +8,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { 
-  CheckCircle, 
+import {
+  CheckCircle,
   Loader2,
   Copy,
-  Sparkles,
-  AlertTriangle
+  AlertTriangle,
+  KeyRound,
+  Gamepad2,
+  Flame,
+  Crosshair,
+  Shapes,
 } from "lucide-react";
 import { Navigation } from "@/components/navigation";
 
@@ -185,22 +189,24 @@ export default function CodeActivationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100">
+    <div className="min-h-screen bg-transparent">
       <Navigation currentPage="activation" />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto glass-panel rounded-2xl px-6 py-8">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Sparkles className="w-8 h-8 text-purple-600" />
+              <KeyRound className="w-8 h-8 text-indigo-600" />
               <h1 className="text-4xl font-bold text-gray-900">
                 Активация кода
               </h1>
-              <Sparkles className="w-8 h-8 text-purple-600" />
             </div>
             <p className="text-xl text-gray-600 mb-2">
               Активируйте ваш код для получения купленного товара/услуги
+            </p>
+            <p className="text-sm text-gray-600">
+              Roblox • Fortnite • PUBG • и другие игры
             </p>
           </div>
 
@@ -225,38 +231,43 @@ export default function CodeActivationPage() {
                       type="button"
                       variant={productType === "roblox" ? "default" : "outline"}
                       onClick={() => setProductType("roblox")}
-                      className="w-full"
+                      className="w-full gap-2"
                     >
+                      <Gamepad2 className="w-4 h-4" />
                       Roblox
                     </Button>
                     <Button
                       type="button"
                       variant={productType === "fortnite" ? "default" : "outline"}
                       onClick={() => setProductType("fortnite")}
-                      className="w-full"
+                      className="w-full gap-2"
                     >
+                      <Flame className="w-4 h-4" />
                       Fortnite
                     </Button>
                     <Button
                       type="button"
                       variant={productType === "pubg" ? "default" : "outline"}
                       onClick={() => setProductType("pubg")}
-                      className="w-full"
+                      className="w-full gap-2"
                     >
+                      <Crosshair className="w-4 h-4" />
                       PUBG
                     </Button>
                     <Button
                       type="button"
                       variant={productType === "other" ? "default" : "outline"}
                       onClick={() => setProductType("other")}
-                      className="w-full"
+                      className="w-full gap-2"
                     >
+                      <Shapes className="w-4 h-4" />
                       Другое
                     </Button>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="code" className="text-lg font-semibold">
+                  <Label htmlFor="code" className="text-lg font-semibold inline-flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-indigo-600" />
                     Код активации
                   </Label>
                   <Input
