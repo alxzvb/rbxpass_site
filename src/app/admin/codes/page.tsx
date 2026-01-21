@@ -37,6 +37,7 @@ export default function AdminCodes() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   
   // Форма для добавления кода
   const [newCode, setNewCode] = useState("");
@@ -201,9 +202,71 @@ export default function AdminCodes() {
     }
   };
 
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const activeIds = codes.filter((code) => code.status === "active").map((code) => code.id);
+    const allActiveSelected = activeIds.length > 0 && activeIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allActiveSelected ? new Set() : new Set(activeIds));
+  };
+
+  const deleteSelectedCodes = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Удалить выбранные коды: ${selectedIds.size}?`)) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const ids = Array.from(selectedIds);
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          const res = await fetch(`/api/v1/admin/codes/${id}`, { method: "DELETE" });
+          return res.ok;
+        })
+      );
+
+      const failedCount = results.filter((ok) => !ok).length;
+      if (failedCount > 0) {
+        setError(`Не удалось удалить ${failedCount} код(ов)`);
+      } else {
+        setSuccess(`Удалено кодов: ${ids.length}`);
+      }
+
+      setSelectedIds(new Set());
+      loadCodes();
+    } catch {
+      setError("Ошибка удаления кодов");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadCodes();
   }, [loadCodes]);
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const existing = new Set(codes.map((code) => code.id));
+      const next = new Set<number>();
+      prev.forEach((id) => {
+        if (existing.has(id)) next.add(id);
+      });
+      return next;
+    });
+  }, [codes]);
 
   const activeCodes = codes.filter(c => c.status === "active").length;
   const usedCodes = codes.filter(c => c.status === "used").length;
@@ -488,9 +551,32 @@ export default function AdminCodes() {
             </div>
           ) : (
             <div className="overflow-x-auto">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                  onClick={deleteSelectedCodes}
+                  disabled={loading || selectedIds.size === 0}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Удалить выбранные ({selectedIds.size})
+                </Button>
+                <span className="text-xs text-gray-500">
+                  Выбор доступен только для активных кодов
+                </span>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        aria-label="Выбрать все активные"
+                        checked={codes.some((code) => code.status === "active") && codes.filter((code) => code.status === "active").every((code) => selectedIds.has(code.id))}
+                        onChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Код</TableHead>
                     <TableHead>Номинал</TableHead>
                     <TableHead>Игра</TableHead>
@@ -502,6 +588,15 @@ export default function AdminCodes() {
                 <TableBody>
                   {codes.map((code) => (
                     <TableRow key={code.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          aria-label={`Выбрать код ${code.code}`}
+                          checked={selectedIds.has(code.id)}
+                          disabled={code.status !== "active"}
+                          onChange={() => toggleSelected(code.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono">{code.code}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
