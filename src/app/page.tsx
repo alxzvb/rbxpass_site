@@ -102,18 +102,20 @@ export default function CodeActivationPage() {
     setError(null);
     
     try {
+      const payload = {
+        code: code.toUpperCase(),
+        productType,
+        gamepassUrl: gamepassUrl.trim() || undefined,
+        nickname: nickname.trim() || undefined,
+        telegram: telegram.trim() || undefined,
+        epicLogin: epicLogin.trim() || undefined,
+        epicPassword: epicPassword.trim() || undefined,
+      };
+
       const response = await fetch("/api/activate-gamepass", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          code: code.toUpperCase(), 
-          productType,
-          gamepassUrl: gamepassUrl.trim(),
-          nickname: nickname.trim(),
-          telegram: telegram.trim(),
-          epicLogin: epicLogin.trim(),
-          epicPassword: epicPassword.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
       
       const data = await response.json();
