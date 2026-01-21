@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,6 +29,7 @@ type Code = {
   nominal: number;
   status: string;
   used_at: string | null;
+  product_type?: string | null;
 };
 
 export default function AdminCodes() {
@@ -35,18 +37,29 @@ export default function AdminCodes() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   
   // Форма для добавления кода
   const [newCode, setNewCode] = useState("");
   const [newNominal, setNewNominal] = useState(100);
+  const [newProductType, setNewProductType] = useState("roblox");
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Форма для генерации кодов
   const [generateCount, setGenerateCount] = useState(10);
   const [generateNominal, setGenerateNominal] = useState(100);
   const [generatePrefix, setGeneratePrefix] = useState("RBX100");
+  const [generateProductType, setGenerateProductType] = useState("roblox");
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+  
+  const updateGenerateType = (value: string) => {
+    setGenerateProductType(value);
+    if (value === "roblox") setGeneratePrefix("RBX100");
+    if (value === "fortnite") setGeneratePrefix("FNT");
+    if (value === "pubg") setGeneratePrefix("PUBG");
+    if (value === "other") setGeneratePrefix("CODE");
+  };
 
   const loadCodes = useCallback(async () => {
     setLoading(true);
@@ -83,7 +96,8 @@ export default function AdminCodes() {
         body: JSON.stringify({
           code: newCode.toUpperCase(),
           nominal: newNominal,
-          status: "active"
+          status: "active",
+          productType: newProductType
         })
       });
       
@@ -127,7 +141,8 @@ export default function AdminCodes() {
         body: JSON.stringify({
           count: generateCount,
           nominal: generateNominal,
-          prefix: generatePrefix
+          prefix: generatePrefix,
+          productType: generateProductType
         })
       });
       
@@ -187,9 +202,71 @@ export default function AdminCodes() {
     }
   };
 
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const activeIds = codes.filter((code) => code.status === "active").map((code) => code.id);
+    const allActiveSelected = activeIds.length > 0 && activeIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allActiveSelected ? new Set() : new Set(activeIds));
+  };
+
+  const deleteSelectedCodes = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Удалить выбранные коды: ${selectedIds.size}?`)) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const ids = Array.from(selectedIds);
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          const res = await fetch(`/api/v1/admin/codes/${id}`, { method: "DELETE" });
+          return res.ok;
+        })
+      );
+
+      const failedCount = results.filter((ok) => !ok).length;
+      if (failedCount > 0) {
+        setError(`Не удалось удалить ${failedCount} код(ов)`);
+      } else {
+        setSuccess(`Удалено кодов: ${ids.length}`);
+      }
+
+      setSelectedIds(new Set());
+      loadCodes();
+    } catch {
+      setError("Ошибка удаления кодов");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadCodes();
   }, [loadCodes]);
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const existing = new Set(codes.map((code) => code.id));
+      const next = new Set<number>();
+      prev.forEach((id) => {
+        if (existing.has(id)) next.add(id);
+      });
+      return next;
+    });
+  }, [codes]);
 
   const activeCodes = codes.filter(c => c.status === "active").length;
   const usedCodes = codes.filter(c => c.status === "used").length;
@@ -241,6 +318,20 @@ export default function AdminCodes() {
                     onChange={(e) => setGenerateNominal(Number(e.target.value))}
                     min="1"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="generate-product-type">Игра</Label>
+                  <Select value={generateProductType} onValueChange={updateGenerateType}>
+                    <SelectTrigger id="generate-product-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="roblox">Roblox</SelectItem>
+                      <SelectItem value="fortnite">Fortnite</SelectItem>
+                      <SelectItem value="pubg">PUBG</SelectItem>
+                      <SelectItem value="other">Другое</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="generate-prefix">Префикс</Label>
@@ -309,6 +400,20 @@ export default function AdminCodes() {
                   onChange={(e) => setNewNominal(Number(e.target.value))}
                   min="1"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-product-type">Игра</Label>
+                <Select value={newProductType} onValueChange={setNewProductType}>
+                  <SelectTrigger id="new-product-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="roblox">Roblox</SelectItem>
+                    <SelectItem value="fortnite">Fortnite</SelectItem>
+                    <SelectItem value="pubg">PUBG</SelectItem>
+                    <SelectItem value="other">Другое</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button
                 onClick={addCode}
@@ -446,11 +551,35 @@ export default function AdminCodes() {
             </div>
           ) : (
             <div className="overflow-x-auto">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                  onClick={deleteSelectedCodes}
+                  disabled={loading || selectedIds.size === 0}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Удалить выбранные ({selectedIds.size})
+                </Button>
+                <span className="text-xs text-gray-500">
+                  Выбор доступен только для активных кодов
+                </span>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        aria-label="Выбрать все активные"
+                        checked={codes.some((code) => code.status === "active") && codes.filter((code) => code.status === "active").every((code) => selectedIds.has(code.id))}
+                        onChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Код</TableHead>
                     <TableHead>Номинал</TableHead>
+                    <TableHead>Игра</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead>Использован</TableHead>
                     <TableHead>Действия</TableHead>
@@ -459,12 +588,26 @@ export default function AdminCodes() {
                 <TableBody>
                   {codes.map((code) => (
                     <TableRow key={code.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          aria-label={`Выбрать код ${code.code}`}
+                          checked={selectedIds.has(code.id)}
+                          disabled={code.status !== "active"}
+                          onChange={() => toggleSelected(code.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono">{code.code}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-4 h-4 text-green-600" />
                           <span className="font-medium">{code.nominal} Robux</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {code.product_type ?? "roblox"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 

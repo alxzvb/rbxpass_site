@@ -30,15 +30,16 @@ export async function POST(request: Request) {
       .regex(/^[A-Z0-9]+$/)
       .optional()
       .default("RBX"),
+    productType: z.enum(["roblox", "fortnite", "pubg", "other"]).optional().default("roblox"),
   });
 
   try {
     const body = await request.json();
-    const { count, nominal, prefix } = schema.parse(body);
+    const { count, nominal, prefix, productType } = schema.parse(body);
 
-    const codes = await generateSecureCodes(count, prefix, nominal);
+    const codes = await generateSecureCodes(count, prefix, nominal, productType);
 
-    const createdCodes = await prisma.code.createMany({
+    const createdCodes = await prisma.legacyCode.createMany({
       data: codes,
     });
 
@@ -77,9 +78,10 @@ export async function POST(request: Request) {
 async function generateSecureCodes(
   count: number,
   prefix: string,
-  nominal: number
+  nominal: number,
+  productType: "roblox" | "fortnite" | "pubg" | "other"
 ) {
-  const codes: Array<{ code: string; nominal: number; status: "active" }> = [];
+  const codes: Array<{ code: string; nominal: number; status: "active"; product_type: string }> = [];
   const existingCodes = await getExistingCodes();
 
   let generatedCount = 0;
@@ -112,6 +114,7 @@ async function generateSecureCodes(
         code,
         nominal,
         status: "active",
+        product_type: productType,
       });
       existingCodes.add(code);
       generatedCount++;
@@ -161,7 +164,7 @@ function generateChecksum(code: string): string {
 
 // Получение существующих кодов из базы
 async function getExistingCodes(): Promise<Set<string>> {
-  const existing = await prisma.code.findMany({
+  const existing = await prisma.legacyCode.findMany({
     select: { code: true },
     take: 10000, // Ограничиваем для производительности
   });
@@ -172,7 +175,7 @@ async function getExistingCodes(): Promise<Set<string>> {
 async function verifyBatchUniqueness(codes: string[]): Promise<string[]> {
   if (codes.length === 0) return [];
 
-  const existing = await prisma.code.findMany({
+  const existing = await prisma.legacyCode.findMany({
     where: {
       code: { in: codes },
     },
@@ -204,7 +207,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const stats = await prisma.code.groupBy({
+    const stats = await prisma.legacyCode.groupBy({
       by: ["status", "nominal"],
       _count: {
         _all: true,

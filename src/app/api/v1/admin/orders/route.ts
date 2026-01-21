@@ -8,10 +8,12 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status") || undefined;
+  const productType = searchParams.get("productType") || undefined;
   const q = searchParams.get("q") || undefined;
 
   const where: {
     status?: string;
+    product_type?: string;
     OR?: Array<{
       short_code?: { contains: string };
       nickname?: { contains: string };
@@ -19,6 +21,7 @@ export async function GET(request: Request) {
     }>;
   } = {};
   if (status) where.status = status;
+  if (productType && productType !== "all") where.product_type = productType;
   if (q) where.OR = [
     { short_code: { contains: q } },
     { nickname: { contains: q } },

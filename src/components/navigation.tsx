@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from 'next/image';
-import { Home, Search, BookOpen, Shield, PlayCircle, Menu } from "lucide-react";
+import { Home, Search, BookOpen, Shield, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -18,19 +18,19 @@ export function Navigation({ currentPage }: NavigationProps) {
   const getPageTitle = () => {
     switch (currentPage) {
       case "instructions":
-        return "Инструкция по GamePass";
+        return "Инструкция по созданию GamePass";
       case "status":
         return "Статус заказа";
       default:
-        return "Активация Robux";
+        return "Активация кода";
     }
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200">
+    <nav className="bg-white/70 backdrop-blur-md shadow-sm border-b border-white/60">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center">
               <Image
                 src="/images/logo.jpg" 
@@ -44,31 +44,9 @@ export function Navigation({ currentPage }: NavigationProps) {
               <h1 className="text-2xl font-bold text-gray-900">RBXPass</h1>
               <p className="text-xs text-gray-500">{getPageTitle()}</p>
             </div>
-          </div>
+          </Link>
           {/* Desktop actions */}
           <div className="hidden md:flex gap-2">
-            {currentPage !== "home" && (
-              <Button asChild variant="outline" size="sm">
-                <Link
-                  href="https://rutube.ru/video/a2652268ba8a379f99c77eecb5ac7745/"
-                  className="flex items-center gap-1"
-                >
-                  <PlayCircle className="w-3 h-3" />
-                  Видеоинструкция
-                </Link>
-              </Button>
-            )}
-            {currentPage !== "home" && (
-              <Button asChild variant="outline" size="sm">
-                <Link
-                  href="https://t.me/loothub_support"
-                  className="flex items-center gap-1"
-                >
-                  <Shield className="w-3 h-3" />
-                  Поддержка
-                </Link>
-              </Button>
-            )}
             {currentPage !== "home" && (
               <Button asChild variant="outline" size="sm">
                 <Link href="/" className="flex items-center gap-1">
@@ -81,7 +59,7 @@ export function Navigation({ currentPage }: NavigationProps) {
               <Button asChild variant="outline" size="sm">
                 <Link href="/instructions" className="flex items-center gap-1">
                   <BookOpen className="w-3 h-3" />
-                  Инструкция
+                  Инструкция по созданию GamePass
                 </Link>
               </Button>
             )}
@@ -90,6 +68,17 @@ export function Navigation({ currentPage }: NavigationProps) {
                 <Link href="/status" className="flex items-center gap-1">
                   <Search className="w-3 h-3" />
                   Статус
+                </Link>
+              </Button>
+            )}
+            {currentPage !== "home" && (
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href="https://t.me/loothub_support"
+                  className="flex items-center gap-1"
+                >
+                  <Shield className="w-3 h-3" />
+                  Поддержка
                 </Link>
               </Button>
             )}
@@ -132,17 +121,6 @@ export function Navigation({ currentPage }: NavigationProps) {
                       <Link href="/status" className="flex items-center gap-2">
                         <Search className="w-4 h-4" />
                         Статус
-                      </Link>
-                    </Button>
-                  )}
-                  {currentPage !== "home" && (
-                    <Button asChild variant="outline" size="sm">
-                      <Link
-                        href="https://rutube.ru/video/a2652268ba8a379f99c77eecb5ac7745/"
-                        className="flex items-center gap-2"
-                      >
-                        <PlayCircle className="w-4 h-4" />
-                        Видеоинструкция
                       </Link>
                     </Button>
                   )}

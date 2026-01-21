@@ -26,7 +26,7 @@ const statusConfig = {
     label: "Выполнен",
     color: "bg-green-100 text-green-800",
     icon: CheckCircle,
-    description: "Заказ успешно выполнен! Robux должны быть на вашем аккаунте"
+    description: "Заказ успешно выполнен! Товар или услуга доставлены"
   },
   error: {
     label: "Ошибка",
@@ -57,18 +57,18 @@ export default function StatusPage() {
   const StatusIcon = statusInfo?.icon || AlertCircle;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-transparent">
       <Navigation currentPage="status" />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto glass-panel rounded-2xl px-6 py-8">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               📊 Статус заказа
             </h1>
             <p className="text-xl text-gray-600">
-              Проверьте статус вашего заказа
+              Проверка статуса по любым кодам (Roblox, Fortnite, PUBG и др.)
             </p>
           </div>
 
@@ -185,7 +185,7 @@ export default function StatusPage() {
                   </div>
                   <div>
                     <h3 className="font-medium">Выполнен</h3>
-                    <p className="text-sm text-gray-600">Robux доставлены</p>
+                    <p className="text-sm text-gray-600">Заказ завершен</p>
                   </div>
                 </div>
               </CardContent>

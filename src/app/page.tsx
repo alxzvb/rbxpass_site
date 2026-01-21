@@ -8,19 +8,30 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { 
-  CheckCircle, 
+import {
+  CheckCircle,
   Loader2,
   Copy,
-  Sparkles
+  AlertTriangle,
+  KeyRound,
+  Gamepad2,
+  Flame,
+  Crosshair,
+  Shapes,
 } from "lucide-react";
 import { Navigation } from "@/components/navigation";
+
+type ProductType = "roblox" | "fortnite" | "pubg" | "other";
 
 export default function CodeActivationPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [code, setCode] = useState("");
+  const [productType, setProductType] = useState<ProductType>("roblox");
   const [nickname, setNickname] = useState("");
   const [gamepassUrl, setGamepassUrl] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [epicLogin, setEpicLogin] = useState("");
+  const [epicPassword, setEpicPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -30,7 +41,8 @@ export default function CodeActivationPage() {
   // Валидация только для нового формата
   const validateCode = (code: string) => {
     const NEW_CODE_REGEX = /^[A-Z0-9]{2,6}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{1}$/i;
-    return NEW_CODE_REGEX.test(code);
+    const OLD_CODE_REGEX = /^RBX100-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
+    return NEW_CODE_REGEX.test(code) || OLD_CODE_REGEX.test(code);
   };
 
   const handleCodeSubmit = async () => {
@@ -63,6 +75,18 @@ export default function CodeActivationPage() {
         return;
       }
       
+      // Автоопределение типа продукта по префиксу кода
+      const codePrefix = code.toUpperCase().split("-")[0];
+      if (codePrefix.startsWith("RBX") || codePrefix === "RBX100") {
+        setProductType("roblox");
+      } else if (codePrefix.startsWith("FNT") || codePrefix.startsWith("FORTNITE")) {
+        setProductType("fortnite");
+      } else if (codePrefix.startsWith("PUBG") || codePrefix.startsWith("PUB")) {
+        setProductType("pubg");
+      } else if (data.productType) {
+        setProductType(data.productType as ProductType);
+      }
+      
       // Код валиден, переходим к подтверждению
       setActivationResult(data);
       setStep(2);
@@ -78,14 +102,20 @@ export default function CodeActivationPage() {
     setError(null);
     
     try {
+      const payload = {
+        code: code.toUpperCase(),
+        productType,
+        gamepassUrl: gamepassUrl.trim() || undefined,
+        nickname: nickname.trim() || undefined,
+        telegram: telegram.trim() || undefined,
+        epicLogin: epicLogin.trim() || undefined,
+        epicPassword: epicPassword.trim() || undefined,
+      };
+
       const response = await fetch("/api/activate-gamepass", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          code: code.toUpperCase(), 
-          gamepassUrl: gamepassUrl.trim(),
-          nickname: nickname.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
       
       const data = await response.json();
@@ -107,13 +137,16 @@ export default function CodeActivationPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Можно добавить toast-уведомление о успешном копировании
   };
 
   const resetForm = () => {
     setCode("");
     setNickname("");
     setGamepassUrl("");
+    setTelegram("");
+    setEpicLogin("");
+    setEpicPassword("");
+    setProductType("roblox");
     setStep(1);
     setError(null);
     setSuccess(null);
@@ -122,23 +155,60 @@ export default function CodeActivationPage() {
 
   const progressValue = (step / 2) * 100;
 
+  const getProductTypeRules = () => {
+    if (productType === "fortnite") {
+      return (
+        <Alert className="bg-yellow-50 border-yellow-200">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-sm text-yellow-800 space-y-2">
+            <p className="font-semibold">❗ Правила для Fortnite:</p>
+            <ul className="list-disc list-inside space-y-1 text-xs">
+              <li>Если вы покупаете через EPIC GAMES, необходимо сообщить данные от аккаунта EPIC GAMES</li>
+              <li>Регион аккаунта должен быть Турция</li>
+              <li>Если у вас другой регион аккаунта - Мы сменим его на Турцию</li>
+              <li>❗❗❗Смена региона невозможна, если вы уже меняли его в течение последних 6 месяцев❗❗❗</li>
+              <li>❗❗❗Epic Games разрешает менять регион раз в 6 месяцев❗❗❗</li>
+              <li>❗❗❗На новых аккаунтах с пополнением или покупками смена региона недоступна❗❗❗</li>
+              <li>Если Вы играете на Nintendo, в баксы будут на ПК, через ПК совершаете покупку и покупка уже будет на самой Nintendo (При этом нинтендо нужно связать с Эпик Гейм)</li>
+              <li>Возраст любого аккаунта должен быть 18+</li>
+              <li>На аккаунте не должно быть родительского контроля и никаких ограничений, которые мешают совершить покупку, либо же зайти в игру</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    if (productType === "pubg") {
+      return (
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertTriangle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-sm text-blue-800">
+            <p className="font-semibold">❗ Для PUBG укажите ваш Telegram для связи</p>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100">
+    <div className="min-h-screen bg-transparent">
       <Navigation currentPage="activation" />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto glass-panel rounded-2xl px-6 py-8">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Sparkles className="w-8 h-8 text-purple-600" />
+              <KeyRound className="w-8 h-8 text-indigo-600" />
               <h1 className="text-4xl font-bold text-gray-900">
                 Активация кода
               </h1>
-              <Sparkles className="w-8 h-8 text-purple-600" />
             </div>
             <p className="text-xl text-gray-600 mb-2">
-              Активируйте ваш код для получения Robux
+              Активируйте ваш код для получения купленного товара/услуги
+            </p>
+            <p className="text-sm text-gray-600">
+              Roblox • Fortnite • PUBG • и другие игры
             </p>
           </div>
 
@@ -154,10 +224,52 @@ export default function CodeActivationPage() {
           {/* Step 1: Code Input */}
           {step === 1 && (
             <Card className="shadow-xl border-2 border-purple-100">
-
               <CardContent className="space-y-6 pt-6">
+                {/* Выбор типа продукта (виден сразу) */}
+                <div className="space-y-2">
+                  <Label>Тип продукта</Label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <Button
+                      type="button"
+                      variant={productType === "roblox" ? "default" : "outline"}
+                      onClick={() => setProductType("roblox")}
+                      className="w-full gap-2"
+                    >
+                      <Gamepad2 className="w-4 h-4" />
+                      Roblox
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={productType === "fortnite" ? "default" : "outline"}
+                      onClick={() => setProductType("fortnite")}
+                      className="w-full gap-2"
+                    >
+                      <Flame className="w-4 h-4" />
+                      Fortnite
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={productType === "pubg" ? "default" : "outline"}
+                      onClick={() => setProductType("pubg")}
+                      className="w-full gap-2"
+                    >
+                      <Crosshair className="w-4 h-4" />
+                      PUBG
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={productType === "other" ? "default" : "outline"}
+                      onClick={() => setProductType("other")}
+                      className="w-full gap-2"
+                    >
+                      <Shapes className="w-4 h-4" />
+                      Другое
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-3">
-                  <Label htmlFor="code" className="text-lg font-semibold">
+                  <Label htmlFor="code" className="text-lg font-semibold inline-flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-indigo-600" />
                     Код активации
                   </Label>
                   <Input
@@ -222,7 +334,13 @@ export default function CodeActivationPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-700">Номинал:</span>
                     <Badge className="text-lg px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500">
-                      {activationResult.nominal} Robux
+                      {activationResult.nominal}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">Тип продукта:</span>
+                    <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                      {productType === "roblox" ? "Roblox" : productType === "fortnite" ? "Fortnite" : productType === "pubg" ? "PUBG" : "Другое"}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
@@ -234,28 +352,102 @@ export default function CodeActivationPage() {
                   </div>
                 </div>
 
-                {/* Данные для GamePass */}
+                {/* Тип продукта (сводка) */}
+                <div className="space-y-2">
+                  <Label>Тип продукта</Label>
+                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                    {productType === "roblox" ? "Roblox" : productType === "fortnite" ? "Fortnite" : productType === "pubg" ? "PUBG" : "Другое"}
+                  </Badge>
+                </div>
+
+                {/* Правила для Fortnite */}
+                {getProductTypeRules()}
+
+                {/* Данные для активации */}
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nickname">Ваш ник в Roblox</Label>
-                    <Input 
-                      id="nickname" 
-                      placeholder="Например, SuperPlayer123"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gamepass">Ссылка на ваш GamePass</Label>
-                    <Input 
-                      id="gamepass" 
-                      placeholder="https://www.roblox.com/game-pass/1234567/Name"
-                      value={gamepassUrl}
-                      onChange={(e) => setGamepassUrl(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
+                  {productType === "roblox" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="nickname">Ваш ник в Roblox</Label>
+                        <Input 
+                          id="nickname" 
+                          placeholder="Например, SuperPlayer123"
+                          value={nickname}
+                          onChange={(e) => setNickname(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="gamepass">Ссылка на ваш GamePass</Label>
+                        <Input 
+                          id="gamepass" 
+                          placeholder="https://www.roblox.com/game-pass/1234567/Name"
+                          value={gamepassUrl}
+                          onChange={(e) => setGamepassUrl(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telegram">Telegram для связи</Label>
+                        <Input 
+                          id="telegram" 
+                          placeholder="@username или номер телефона"
+                          value={telegram}
+                          onChange={(e) => setTelegram(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {productType === "fortnite" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="epic-login">Логин Epic Games</Label>
+                        <Input 
+                          id="epic-login" 
+                          placeholder="Email или логин"
+                          value={epicLogin}
+                          onChange={(e) => setEpicLogin(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="epic-password">Пароль Epic Games</Label>
+                        <Input 
+                          id="epic-password" 
+                          type="password"
+                          placeholder="Пароль от аккаунта"
+                          value={epicPassword}
+                          onChange={(e) => setEpicPassword(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telegram">Telegram для связи</Label>
+                        <Input 
+                          id="telegram" 
+                          placeholder="@username или номер телефона"
+                          value={telegram}
+                          onChange={(e) => setTelegram(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {(productType === "pubg" || productType === "other") && (
+                    <div className="space-y-2">
+                      <Label htmlFor="telegram">Telegram для связи</Label>
+                      <Input 
+                        id="telegram" 
+                        placeholder="@username или номер телефона"
+                        value={telegram}
+                        onChange={(e) => setTelegram(e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -264,7 +456,12 @@ export default function CodeActivationPage() {
                 <div className="space-y-3">
                   <Button 
                     onClick={handleActivation} 
-                    disabled={loading || !nickname.trim() || !gamepassUrl.trim()}
+                    disabled={
+                      loading || 
+                      (productType === "roblox" && (!nickname.trim() || !gamepassUrl.trim() || !telegram.trim())) ||
+                      (productType === "fortnite" && (!epicLogin.trim() || !epicPassword.trim() || !telegram.trim())) ||
+                      ((productType === "pubg" || productType === "other") && !telegram.trim())
+                    }
                     className="w-full h-12 text-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                     size="lg"
                   >
@@ -314,7 +511,7 @@ export default function CodeActivationPage() {
                       </div>
                       <div className="space-y-1">
                         <span className="text-gray-500 text-xs uppercase font-semibold">Номинал:</span>
-                        <p className="font-bold text-green-600 text-base">{activationResult.nominal} Robux</p>
+                        <p className="font-bold text-green-600 text-base">{activationResult.nominal}</p>
                       </div>
                       <div className="space-y-1">
                         <span className="text-gray-500 text-xs uppercase font-semibold">Статус:</span>
@@ -366,8 +563,6 @@ export default function CodeActivationPage() {
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Help Section */}
         </div>
       </div>
     </div>

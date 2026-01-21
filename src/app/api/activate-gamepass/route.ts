@@ -4,8 +4,12 @@ import { z } from "zod";
 
 const bodySchema = z.object({
   code: z.string().min(1),
-  gamepassUrl: z.string().url(),
-  nickname: z.string().min(1),
+  productType: z.enum(["roblox", "fortnite", "pubg", "other"]).default("roblox"),
+  gamepassUrl: z.string().url().optional(),
+  nickname: z.string().min(1).optional(),
+  epicLogin: z.string().min(1).optional(),
+  epicPassword: z.string().min(1).optional(),
+  telegram: z.string().min(1).optional(),
 });
 
 const CODE_REGEX = {
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
-    const { code, gamepassUrl, nickname } = parsed.data;
+    const { code, gamepassUrl, nickname, productType, epicLogin, epicPassword, telegram } = parsed.data;
 
     // Проверяем формат кода (оба формата)
     const normalizedCode = code.toUpperCase().trim();
@@ -58,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     // Проверяем, что код существует и активен
-    const codeRow = await prisma.code.findUnique({ 
+    const codeRow = await prisma.legacyCode.findUnique({ 
       where: { code: normalizedCode } 
     });
     
@@ -76,16 +80,40 @@ export async function POST(request: Request) {
       }, { status: 409 });
     }
 
-    // Извлекаем ID GamePass из URL
-    const gamepassMatch = gamepassUrl.match(/\/game-pass\/(\d+)/);
-    if (!gamepassMatch) {
-      return NextResponse.json({ 
-        ok: false, 
-        error: "Неверная ссылка на GamePass" 
-      }, { status: 400 });
+    const resolvedType = codeRow.product_type ?? productType;
+    let gamepassId = "";
+    let safeNickname = nickname?.trim() || "";
+    const safeGamepassUrl = gamepassUrl?.trim() || "";
+
+    if (resolvedType === "roblox") {
+      if (!safeNickname || !safeGamepassUrl || !telegram) {
+        return NextResponse.json({ ok: false, error: "Укажите ник, ссылку на GamePass и Telegram" }, { status: 400 });
+      }
+
+      // Извлекаем ID GamePass из URL
+      const gamepassMatch = safeGamepassUrl.match(/\/game-pass\/(\d+)/);
+      if (!gamepassMatch) {
+        return NextResponse.json({ 
+          ok: false, 
+          error: "Неверная ссылка на GamePass" 
+        }, { status: 400 });
+      }
+      
+      gamepassId = gamepassMatch[1];
     }
-    
-    const gamepassId = gamepassMatch[1];
+
+    if (resolvedType === "fortnite") {
+      if (!epicLogin || !epicPassword || !telegram) {
+        return NextResponse.json({ ok: false, error: "Укажите логин, пароль Epic Games и Telegram" }, { status: 400 });
+      }
+      safeNickname = epicLogin.trim();
+    }
+
+    if (resolvedType === "pubg" || resolvedType === "other") {
+      if (!telegram) {
+        return NextResponse.json({ ok: false, error: "Укажите Telegram для связи" }, { status: 400 });
+      }
+    }
 
     // Генерируем короткий код для отслеживания
     const shortCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -95,15 +123,19 @@ export async function POST(request: Request) {
       data: {
         short_code: shortCode,
         code: normalizedCode,
-        nickname,
-        user_id: "gamepass_user", // Для GamePass активации используем специальный ID
-        gamepass_id: gamepassId,
-        gamepass_url: gamepassUrl,
+        nickname: safeNickname || "-",
+        user_id: resolvedType === "roblox" ? "gamepass_user" : "manual_user",
+        gamepass_id: gamepassId || "-",
+        gamepass_url: safeGamepassUrl || "-",
+        product_type: resolvedType,
+        contact_telegram: telegram?.trim() || null,
+        epic_login: epicLogin?.trim() || null,
+        epic_password: epicPassword?.trim() || null,
         status: "queued",
       }
     });
 
-    await prisma.code.update({
+    await prisma.legacyCode.update({
       where: { id: codeRow.id },
       data: { 
         status: "used",
@@ -119,7 +151,9 @@ export async function POST(request: Request) {
         status: order.status,
         created_at: order.created_at,
       },
-      message: `Код успешно активирован! Код заказа: ${order.short_code}`
+      message: resolvedType === "roblox"
+        ? `Код успешно активирован! Код заказа: ${order.short_code}`
+        : `Заявка создана. Мы свяжемся с вами в Telegram. Код заказа: ${order.short_code}`
     });
   } catch (error) {
     console.error("Activate GamePass error:", error);

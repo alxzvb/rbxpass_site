@@ -21,6 +21,10 @@ model Order {
   user_id      String
   gamepass_id  String
   gamepass_url String
+  product_type String   @default("roblox") // roblox | fortnite | pubg | other
+  contact_telegram String?
+  epic_login   String?
+  epic_password String?
   status       String   // queued | processing | done | error
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
@@ -30,10 +34,68 @@ model Order {
   @@index([status])
 }
 
+model LegacyCode {
+  id      Int      @id @default(autoincrement())
+  code    String   @unique
+  nominal Int
+  product_type String   @default("roblox") // roblox | fortnite | pubg | other
+  status  String   // active | used
+  used_at DateTime?
+
+  @@map("Code")
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  title      String
+  productKey String   @unique
+  createdAt  DateTime @default(now())
+
+  codes     Code[]
+  offerMaps OfferMap[]
+}
+
+model OfferMap {
+  id        Int     @id @default(autoincrement())
+  offerId   String  @unique
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+}
+
 model Code {
-  id       Int       @id @default(autoincrement())
-  code     String    @unique
-  nominal  Int
-  status   String    // active | used
-  used_at  DateTime?
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  codeText    String    @unique
+  status      String    @default("available") // available | reserved | delivered
+  orderId     String?
+  itemId      String?
+  reservedAt  DateTime?
+  deliveredAt DateTime?
+  deliveryLogs DeliveryLog[]
+
+  @@map("StockCode")
+}
+
+model YandexEvent {
+  id          Int       @id @default(autoincrement())
+  orderId     String
+  type        String
+  eventTime   DateTime
+  payloadJson Json
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([orderId, type, eventTime])
+}
+
+model DeliveryLog {
+  id        Int      @id @default(autoincrement())
+  orderId   String
+  itemId    String
+  codeId    Int
+  code      Code     @relation(fields: [codeId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, itemId])
 }

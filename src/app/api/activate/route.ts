@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Неверный формат кода" }, { status: 400 });
     }
 
-    const codeRow = await prisma.code.findUnique({ where: { code: code.toUpperCase() } });
+    const codeRow = await prisma.legacyCode.findUnique({ where: { code: code.toUpperCase() } });
     if (!codeRow) {
       return NextResponse.json({ ok: false, error: "Код не найден" }, { status: 404 });
     }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
           status: "queued",
         },
       });
-      await tx.code.update({ where: { code: code.toUpperCase() }, data: { status: "used", used_at: new Date() } });
+      await tx.legacyCode.update({ where: { code: code.toUpperCase() }, data: { status: "used", used_at: new Date() } });
       return created;
     });
 
