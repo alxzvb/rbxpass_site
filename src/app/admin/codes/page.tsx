@@ -52,6 +52,8 @@ export default function AdminCodes() {
   const [generateProductType, setGenerateProductType] = useState("roblox");
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+  const [manualCode, setManualCode] = useState("");
+  const [manualLoading, setManualLoading] = useState(false);
   
   const updateGenerateType = (value: string) => {
     setGenerateProductType(value);
@@ -161,6 +163,39 @@ export default function AdminCodes() {
       setError("Ошибка генерации кодов");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markCodeAsUsed = async () => {
+    if (!manualCode.trim()) {
+      setError("Введите код для ручной активации");
+      return;
+    }
+
+    setManualLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch("/api/v1/admin/codes/mark-used", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: manualCode.trim().toUpperCase() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Ошибка ручной активации");
+        return;
+      }
+
+      setSuccess("Код активирован вручную");
+      setManualCode("");
+      loadCodes();
+    } catch {
+      setError("Ошибка ручной активации");
+    } finally {
+      setManualLoading(false);
     }
   };
 
@@ -436,6 +471,33 @@ export default function AdminCodes() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ручная активация кода</CardTitle>
+          <CardDescription>
+            Если покупатель прислал код в Telegram, вставьте его и отметьте как активированный.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+              placeholder="RBX100-XXXX-XXXX или FN1000-XXXX-XXXX-X"
+              className="font-mono"
+            />
+            <Button
+              onClick={markCodeAsUsed}
+              disabled={manualLoading || !manualCode.trim()}
+              className="gap-2"
+            >
+              {manualLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Активировать вручную
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

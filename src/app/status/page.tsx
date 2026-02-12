@@ -38,19 +38,51 @@ const statusConfig = {
 
 export default function StatusPage() {
   const [code, setCode] = useState("");
+  const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [foundShortCode, setFoundShortCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const supportTelegram = process.env.NEXT_PUBLIC_SUPPORT_TELEGRAM || "@your_support_tg";
 
-  async function check() {
+  async function checkByCode() {
+    if (!code.trim()) return;
     setLoading(true);
     setError(null);
     setStatus(null);
-    const res = await fetch(`/api/status?code=${encodeURIComponent(code)}`);
-    const data = await res.json();
-    setLoading(false);
-    if (!data.ok) return setError(data.error ?? "Заказ не найден");
-    setStatus(data.order.status);
+    setFoundShortCode(null);
+
+    try {
+      const res = await fetch(`/api/status?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (!data.ok) return setError(data.error ?? "Заказ не найден");
+      setStatus(data.order.status);
+      setFoundShortCode(data.order.short_code);
+    } catch {
+      setError("Не удалось проверить статус");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function checkByNickname() {
+    if (!nickname.trim()) return;
+    setLoading(true);
+    setError(null);
+    setStatus(null);
+    setFoundShortCode(null);
+
+    try {
+      const res = await fetch(`/api/status?nickname=${encodeURIComponent(nickname.trim())}`);
+      const data = await res.json();
+      if (!data.ok) return setError(data.error ?? "Заказ не найден");
+      setStatus(data.order.status);
+      setFoundShortCode(data.order.short_code);
+    } catch {
+      setError("Не удалось проверить статус");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const statusInfo = status ? statusConfig[status as keyof typeof statusConfig] : null;
@@ -92,7 +124,7 @@ export default function StatusPage() {
                     className="font-mono"
                   />
                   <Button 
-                    onClick={check} 
+                    onClick={checkByCode} 
                     disabled={loading || !code.trim()}
                     className="px-6"
                   >
@@ -103,6 +135,30 @@ export default function StatusPage() {
                         <Search className="w-4 h-4 mr-2" />
                         Проверить
                       </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status-nickname">Roblox ник</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="status-nickname"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="username"
+                  />
+                  <Button
+                    onClick={checkByNickname}
+                    disabled={loading || !nickname.trim()}
+                    variant="outline"
+                    className="px-6"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "По нику"
                     )}
                   </Button>
                 </div>
@@ -120,6 +176,11 @@ export default function StatusPage() {
                           {statusInfo.label}
                         </Badge>
                       </div>
+                      {foundShortCode && (
+                        <p className="text-sm text-gray-700">
+                          Код заказа: <span className="font-mono font-medium">{foundShortCode}</span>
+                        </p>
+                      )}
                       <p className="text-sm text-gray-600">
                         {statusInfo.description}
                       </p>
@@ -142,6 +203,11 @@ export default function StatusPage() {
                 <p className="text-sm text-blue-800">
                   Короткий код заказа (например, ABC123) вы получили после успешной активации. 
                   Он отображается в сообщении подтверждения.
+                </p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-900">
+                  Есть вопросы? Напишите в Telegram поддержку: <span className="font-medium">{supportTelegram}</span>
                 </p>
               </div>
             </CardContent>

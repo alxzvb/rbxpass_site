@@ -6,6 +6,8 @@ const bodySchema = z.object({
   code: z.string().min(1),
   productType: z.enum(["roblox", "fortnite", "pubg", "other"]).default("roblox"),
   gamepassUrl: z.string().url().optional(),
+  gamepassId: z.string().regex(/^\d+$/).optional(),
+  regionalPricingDisabled: z.boolean().optional(),
   nickname: z.string().min(1).optional(),
   epicLogin: z.string().min(1).optional(),
   epicPassword: z.string().min(1).optional(),
@@ -41,7 +43,17 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
-    const { code, gamepassUrl, nickname, productType, epicLogin, epicPassword, telegram } = parsed.data;
+    const {
+      code,
+      gamepassUrl,
+      gamepassId,
+      regionalPricingDisabled,
+      nickname,
+      productType,
+      epicLogin,
+      epicPassword,
+      telegram,
+    } = parsed.data;
 
     // Проверяем формат кода (оба формата)
     const normalizedCode = code.toUpperCase().trim();
@@ -81,25 +93,36 @@ export async function POST(request: Request) {
     }
 
     const resolvedType = codeRow.product_type ?? productType;
-    let gamepassId = "";
+    let resolvedGamepassId = "";
     let safeNickname = nickname?.trim() || "";
     const safeGamepassUrl = gamepassUrl?.trim() || "";
+    const safeGamepassId = gamepassId?.trim() || "";
 
     if (resolvedType === "roblox") {
-      if (!safeNickname || !safeGamepassUrl || !telegram) {
-        return NextResponse.json({ ok: false, error: "Укажите ник, ссылку на GamePass и Telegram" }, { status: 400 });
+      if (!safeNickname || (!safeGamepassUrl && !safeGamepassId) || !telegram) {
+        return NextResponse.json({ ok: false, error: "Укажите ник, ссылку или Pass ID и Telegram" }, { status: 400 });
       }
 
-      // Извлекаем ID GamePass из URL
-      const gamepassMatch = safeGamepassUrl.match(/\/game-pass\/(\d+)/);
-      if (!gamepassMatch) {
-        return NextResponse.json({ 
-          ok: false, 
-          error: "Неверная ссылка на GamePass" 
-        }, { status: 400 });
+      if (!regionalPricingDisabled) {
+        return NextResponse.json(
+          { ok: false, error: "Подтвердите, что Regional Pricing отключен" },
+          { status: 400 }
+        );
       }
-      
-      gamepassId = gamepassMatch[1];
+
+      if (safeGamepassId) {
+        resolvedGamepassId = safeGamepassId;
+      } else {
+        // Извлекаем ID GamePass из URL
+        const gamepassMatch = safeGamepassUrl.match(/\/game-pass\/(\d+)/);
+        if (!gamepassMatch) {
+          return NextResponse.json({
+            ok: false,
+            error: "Неверная ссылка на GamePass",
+          }, { status: 400 });
+        }
+        resolvedGamepassId = gamepassMatch[1];
+      }
     }
 
     if (resolvedType === "fortnite") {
@@ -125,7 +148,7 @@ export async function POST(request: Request) {
         code: normalizedCode,
         nickname: safeNickname || "-",
         user_id: resolvedType === "roblox" ? "gamepass_user" : "manual_user",
-        gamepass_id: gamepassId || "-",
+        gamepass_id: resolvedGamepassId || "-",
         gamepass_url: safeGamepassUrl || "-",
         product_type: resolvedType,
         contact_telegram: telegram?.trim() || null,
