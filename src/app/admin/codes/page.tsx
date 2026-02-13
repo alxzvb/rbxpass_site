@@ -22,6 +22,7 @@ import {
   Zap,
   Download
 } from "lucide-react";
+import { ALLOWED_ROBLOX_NOMINALS } from "@/lib/roblox-pricing";
 
 type Code = {
   id: number;
@@ -41,13 +42,13 @@ export default function AdminCodes() {
   
   // Форма для добавления кода
   const [newCode, setNewCode] = useState("");
-  const [newNominal, setNewNominal] = useState(100);
+  const [newNominal, setNewNominal] = useState(ALLOWED_ROBLOX_NOMINALS[0]);
   const [newProductType, setNewProductType] = useState("roblox");
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Форма для генерации кодов
   const [generateCount, setGenerateCount] = useState(10);
-  const [generateNominal, setGenerateNominal] = useState(100);
+  const [generateNominal, setGenerateNominal] = useState(ALLOWED_ROBLOX_NOMINALS[0]);
   const [generatePrefix, setGeneratePrefix] = useState("RBX100");
   const [generateProductType, setGenerateProductType] = useState("roblox");
   const [showGenerateForm, setShowGenerateForm] = useState(false);
@@ -111,7 +112,7 @@ export default function AdminCodes() {
       
       setSuccess("Код успешно добавлен!");
       setNewCode("");
-      setNewNominal(100);
+      setNewNominal(ALLOWED_ROBLOX_NOMINALS[0]);
       setShowAddForm(false);
       loadCodes();
     } catch {
@@ -127,8 +128,8 @@ export default function AdminCodes() {
       return;
     }
     
-    if (generateNominal < 1) {
-      setError("Номинал должен быть больше 0");
+    if (!ALLOWED_ROBLOX_NOMINALS.includes(generateNominal)) {
+      setError("Выберите номинал из разрешенного списка");
       return;
     }
     
@@ -346,13 +347,21 @@ export default function AdminCodes() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="generate-nominal">Номинал (Robux)</Label>
-                  <Input
-                    id="generate-nominal"
-                    type="number"
-                    value={generateNominal}
-                    onChange={(e) => setGenerateNominal(Number(e.target.value))}
-                    min="1"
-                  />
+                  <Select
+                    value={String(generateNominal)}
+                    onValueChange={(value) => setGenerateNominal(Number(value))}
+                  >
+                    <SelectTrigger id="generate-nominal">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALLOWED_ROBLOX_NOMINALS.map((nominal) => (
+                        <SelectItem key={nominal} value={String(nominal)}>
+                          {nominal} Robux
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="generate-product-type">Игра</Label>
@@ -428,13 +437,21 @@ export default function AdminCodes() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-nominal">Номинал (Robux)</Label>
-                <Input
-                  id="new-nominal"
-                  type="number"
-                  value={newNominal}
-                  onChange={(e) => setNewNominal(Number(e.target.value))}
-                  min="1"
-                />
+                <Select
+                  value={String(newNominal)}
+                  onValueChange={(value) => setNewNominal(Number(value))}
+                >
+                  <SelectTrigger id="new-nominal">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ALLOWED_ROBLOX_NOMINALS.map((nominal) => (
+                      <SelectItem key={nominal} value={String(nominal)}>
+                        {nominal} Robux
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-product-type">Игра</Label>

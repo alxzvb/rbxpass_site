@@ -18,7 +18,8 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from "lucide-react";
 
 type Order = {
@@ -68,8 +69,10 @@ export default function AdminOrders() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [updatingOrderIds, setUpdatingOrderIds] = useState<Set<number>>(new Set());
+  const [deletingOrderIds, setDeletingOrderIds] = useState<Set<number>>(new Set());
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -217,6 +220,77 @@ export default function AdminOrders() {
       return next;
     });
     setBulkUpdating(false);
+  }
+
+  async function deleteOrder(id: number) {
+    if (!confirm(`Удалить заказ #${id}?`)) return;
+
+    const previousOrders = orders;
+
+    setError(null);
+    setDeletingOrderIds((prev) => new Set(prev).add(id));
+    setOrders((prev) => prev.filter((order) => order.id !== id));
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+
+    try {
+      const res = await fetch(`/api/v1/admin/orders/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete_failed");
+    } catch {
+      setOrders(previousOrders);
+      setError(`Не удалось удалить заказ #${id}`);
+    } finally {
+      setDeletingOrderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async function deleteSelectedOrders() {
+    const ids = Array.from(selectedOrderIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Удалить выбранные заказы (${ids.length})?`)) return;
+
+    const previousOrders = orders;
+    setError(null);
+    setBulkDeleting(true);
+    setDeletingOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setOrders((prev) => prev.filter((order) => !selectedOrderIds.has(order.id)));
+    setSelectedOrderIds(new Set());
+
+    const failedIds: number[] = [];
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const res = await fetch(`/api/v1/admin/orders/${id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("delete_failed");
+        } catch {
+          failedIds.push(id);
+        }
+      })
+    );
+
+    if (failedIds.length > 0) {
+      setOrders(previousOrders);
+      setError(`Часть заказов не удалилась (${failedIds.length} шт.)`);
+      setSelectedOrderIds(new Set(failedIds));
+    }
+
+    setDeletingOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    setBulkDeleting(false);
   }
 
   useEffect(() => { load(); }, [load]);
@@ -418,14 +492,23 @@ export default function AdminOrders() {
           <CardDescription>
             {orders.length} заказ(ов) найдено
           </CardDescription>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-wrap gap-2">
             <Button
               onClick={markSelectedAsProcessing}
-              disabled={bulkUpdating || selectedOrderIds.size === 0}
+              disabled={bulkUpdating || bulkDeleting || selectedOrderIds.size === 0}
               className="gap-2"
             >
               {bulkUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Перевести выбранные в обработку
+            </Button>
+            <Button
+              onClick={deleteSelectedOrders}
+              disabled={bulkDeleting || bulkUpdating || selectedOrderIds.size === 0}
+              variant="destructive"
+              className="gap-2"
+            >
+              {bulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Удалить выбранные
             </Button>
           </div>
         </CardHeader>
@@ -468,6 +551,13 @@ export default function AdminOrders() {
                   {orders.map((order) => {
                     const statusInfo = statusConfig[order.status as keyof typeof statusConfig];
                     const StatusIcon = statusInfo?.icon || Clock;
+                    const hasGamepassUrl = Boolean(order.gamepass_url && order.gamepass_url !== "-");
+                    const hasGamepassId = Boolean(order.gamepass_id && order.gamepass_id !== "-");
+                    const gamepassHref = hasGamepassUrl
+                      ? order.gamepass_url
+                      : hasGamepassId
+                        ? `https://www.roblox.com/game-pass/${order.gamepass_id}`
+                        : null;
                     
                     return (
                       <TableRow key={order.id}>
@@ -496,14 +586,14 @@ export default function AdminOrders() {
                           <Badge variant="outline">{order.product_type ?? "roblox"}</Badge>
                         </TableCell>
                         <TableCell>
-                          {order.gamepass_url && order.gamepass_url !== "-" ? (
+                          {gamepassHref ? (
                           <a 
-                            href={order.gamepass_url} 
+                            href={gamepassHref}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
                           >
-                            {order.gamepass_id}
+                            {hasGamepassId ? order.gamepass_id : "Открыть"}
                             <ExternalLink className="w-3 h-3" />
                           </a>
                           ) : (
@@ -542,21 +632,32 @@ export default function AdminOrders() {
                           {new Date(order.created_at).toLocaleString("ru-RU")}
                         </TableCell>
                         <TableCell>
-                          <Select 
-                            value={order.status} 
-                            onValueChange={(value) => updateStatus(order.id, value)}
-                            disabled={updatingOrderIds.has(order.id)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="queued">В очереди</SelectItem>
-                              <SelectItem value="processing">В обработке</SelectItem>
-                              <SelectItem value="done">Выполнен</SelectItem>
-                              <SelectItem value="error">Ошибка</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Select 
+                              value={order.status} 
+                              onValueChange={(value) => updateStatus(order.id, value)}
+                              disabled={updatingOrderIds.has(order.id) || deletingOrderIds.has(order.id)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="queued">В очереди</SelectItem>
+                                <SelectItem value="processing">В обработке</SelectItem>
+                                <SelectItem value="done">Выполнен</SelectItem>
+                                <SelectItem value="error">Ошибка</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={deletingOrderIds.has(order.id) || updatingOrderIds.has(order.id)}
+                              onClick={() => deleteOrder(order.id)}
+                              title="Удалить заказ"
+                            >
+                              {deletingOrderIds.has(order.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

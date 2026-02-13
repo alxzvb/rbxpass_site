@@ -20,6 +20,7 @@ import {
   Shapes,
 } from "lucide-react";
 import { Navigation } from "@/components/navigation";
+import { getRequiredGamepassPrice } from "@/lib/roblox-pricing";
 
 type ProductType = "roblox" | "fortnite" | "pubg" | "other";
 
@@ -31,6 +32,7 @@ export default function CodeActivationPage() {
   const [gamepassUrl, setGamepassUrl] = useState("");
   const [gamepassId, setGamepassId] = useState("");
   const [gamepassInputMode, setGamepassInputMode] = useState<"url" | "id">("url");
+  const [robloxFormStep, setRobloxFormStep] = useState<1 | 2>(1);
   const [regionalPricingDisabled, setRegionalPricingDisabled] = useState(false);
   const [telegram, setTelegram] = useState("");
   const [epicLogin, setEpicLogin] = useState("");
@@ -93,6 +95,8 @@ export default function CodeActivationPage() {
       // Код валиден, переходим к подтверждению
       setActivationResult(data);
       setStep(2);
+      setRobloxFormStep(1);
+      setRegionalPricingDisabled(false);
       
     } catch {
       setLoading(false);
@@ -150,6 +154,7 @@ export default function CodeActivationPage() {
     setGamepassUrl("");
     setGamepassId("");
     setGamepassInputMode("url");
+    setRobloxFormStep(1);
     setRegionalPricingDisabled(false);
     setTelegram("");
     setEpicLogin("");
@@ -162,6 +167,8 @@ export default function CodeActivationPage() {
   };
 
   const progressValue = (step / 2) * 100;
+  const nominalValue = Number(activationResult?.nominal ?? 0);
+  const requiredGamepassPrice = getRequiredGamepassPrice(nominalValue);
 
   const getProductTypeRules = () => {
     if (productType === "fortnite") {
@@ -375,87 +382,139 @@ export default function CodeActivationPage() {
                 <div className="space-y-4">
                   {productType === "roblox" && (
                     <>
-                  <div className="space-y-2">
-                    <Label htmlFor="nickname">Ваш ник в Roblox</Label>
-                    <Input 
-                      id="nickname" 
-                      placeholder="Например, SuperPlayer123"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>GamePass: ссылка или Pass ID</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant={gamepassInputMode === "url" ? "default" : "outline"}
-                        onClick={() => setGamepassInputMode("url")}
-                        disabled={loading}
-                      >
-                        По ссылке
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={gamepassInputMode === "id" ? "default" : "outline"}
-                        onClick={() => setGamepassInputMode("id")}
-                        disabled={loading}
-                      >
-                        По Pass ID
-                      </Button>
-                    </div>
-                    {gamepassInputMode === "url" ? (
-                      <Input
-                        id="gamepass"
-                        placeholder="https://www.roblox.com/game-pass/1234567/Name"
-                        value={gamepassUrl}
-                        onChange={(e) => setGamepassUrl(e.target.value)}
-                        disabled={loading}
-                      />
-                    ) : (
-                      <Input
-                        id="gamepass-id"
-                        placeholder="Например, 1234567"
-                        value={gamepassId}
-                        onChange={(e) => setGamepassId(e.target.value.replace(/[^\d]/g, ""))}
-                        disabled={loading}
-                      />
-                    )}
-                    <Alert className="bg-blue-50 border-blue-200">
-                      <AlertDescription className="text-xs text-blue-800 space-y-1">
-                        <p className="font-semibold">Где взять Pass ID:</p>
-                        <p>Откройте страницу вашего GamePass в Roblox и скопируйте цифры после <span className="font-mono">/game-pass/</span>.</p>
-                        <p>Пример: <span className="font-mono">.../game-pass/1234567/...</span> → Pass ID: <span className="font-mono">1234567</span></p>
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                        <input
-                          id="regional-pricing-disabled"
-                          type="checkbox"
-                          checked={regionalPricingDisabled}
-                          onChange={(e) => setRegionalPricingDisabled(e.target.checked)}
-                          disabled={loading}
-                          className="mt-1 h-4 w-4"
-                        />
-                        <Label htmlFor="regional-pricing-disabled" className="text-sm text-amber-900 font-normal leading-5">
-                          Я отключил(а) <span className="font-medium">Regional Pricing</span> в настройках GamePass.
-                        </Label>
-                      </div>
-                      <p className="text-xs text-amber-700 -mt-2">
-                        Без этого покупка может не пройти. Проверьте настройку перед активацией.
-                      </p>
-                      <div className="space-y-2">
-                        <Label htmlFor="telegram">Telegram для связи</Label>
-                        <Input 
-                          id="telegram" 
-                          placeholder="@username или номер телефона"
-                          value={telegram}
-                          onChange={(e) => setTelegram(e.target.value)}
-                          disabled={loading}
-                        />
-                      </div>
+                      {robloxFormStep === 1 ? (
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="nickname">Шаг 1: ваш ник в Roblox</Label>
+                            <Input
+                              id="nickname"
+                              placeholder="Например, SuperPlayer123"
+                              value={nickname}
+                              onChange={(e) => setNickname(e.target.value)}
+                              disabled={loading}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() => setRobloxFormStep(2)}
+                            disabled={loading || !nickname.trim()}
+                            className="w-full"
+                          >
+                            Далее к настройке GamePass
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="nickname">Ваш ник в Roblox</Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="nickname"
+                                placeholder="Например, SuperPlayer123"
+                                value={nickname}
+                                onChange={(e) => setNickname(e.target.value)}
+                                disabled={loading}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setRobloxFormStep(1)}
+                                disabled={loading}
+                              >
+                                Изменить
+                              </Button>
+                            </div>
+                          </div>
+                          {requiredGamepassPrice && (
+                            <Alert className="bg-amber-50 border-amber-200">
+                              <AlertTriangle className="h-4 w-4 text-amber-700" />
+                              <AlertDescription className="text-sm text-amber-900">
+                                Обратите внимание: для номинала <b>{nominalValue}</b> нужно поставить цену
+                                на GamePass <b>{requiredGamepassPrice}</b> и обязательно отключить Regional Pricing.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          <div className="space-y-2">
+                            <Label>Шаг 2: GamePass (ссылка или Pass ID)</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                type="button"
+                                variant={gamepassInputMode === "url" ? "default" : "outline"}
+                                onClick={() => setGamepassInputMode("url")}
+                                disabled={loading}
+                              >
+                                По ссылке
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={gamepassInputMode === "id" ? "default" : "outline"}
+                                onClick={() => setGamepassInputMode("id")}
+                                disabled={loading}
+                              >
+                                По Pass ID
+                              </Button>
+                            </div>
+                            {gamepassInputMode === "url" ? (
+                              <Input
+                                id="gamepass"
+                                placeholder="https://www.roblox.com/game-pass/1234567/Name"
+                                value={gamepassUrl}
+                                onChange={(e) => setGamepassUrl(e.target.value)}
+                                disabled={loading}
+                              />
+                            ) : (
+                              <Input
+                                id="gamepass-id"
+                                placeholder="Например, 1234567"
+                                value={gamepassId}
+                                onChange={(e) => setGamepassId(e.target.value.replace(/[^\d]/g, ""))}
+                                disabled={loading}
+                              />
+                            )}
+                            <Alert className="bg-blue-50 border-blue-200">
+                              <AlertDescription className="text-xs text-blue-800 space-y-1">
+                                <p className="font-semibold">Где взять Pass ID:</p>
+                                <p>Откройте страницу вашего GamePass в Roblox и скопируйте цифры после <span className="font-mono">/game-pass/</span>.</p>
+                                <p>Пример: <span className="font-mono">.../game-pass/1234567/...</span> → Pass ID: <span className="font-mono">1234567</span></p>
+                              </AlertDescription>
+                            </Alert>
+                          </div>
+                          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <input
+                              id="regional-pricing-disabled"
+                              type="checkbox"
+                              checked={regionalPricingDisabled}
+                              onChange={(e) => setRegionalPricingDisabled(e.target.checked)}
+                              disabled={loading}
+                              className="mt-1 h-4 w-4"
+                            />
+                            <Label htmlFor="regional-pricing-disabled" className="flex-1 text-sm text-amber-900 font-normal leading-5">
+                              {requiredGamepassPrice ? (
+                                <>
+                                  Подтверждаю: цену на GamePass выставил(а) <span className="font-medium">{requiredGamepassPrice}</span> и <span className="font-medium">Regional Pricing</span> отключил(а).
+                                </>
+                              ) : (
+                                <>
+                                  Подтверждаю: выставил(а) верную цену и <span className="font-medium">Regional Pricing</span> отключил(а).
+                                </>
+                              )}
+                            </Label>
+                          </div>
+                          <p className="text-xs text-amber-700 -mt-2">
+                            Без этого покупка может не пройти. Проверьте настройки перед активацией.
+                          </p>
+                          <div className="space-y-2">
+                            <Label htmlFor="telegram">Telegram для связи</Label>
+                            <Input
+                              id="telegram"
+                              placeholder="@username или номер телефона"
+                              value={telegram}
+                              onChange={(e) => setTelegram(e.target.value)}
+                              disabled={loading}
+                            />
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
 
@@ -513,29 +572,31 @@ export default function CodeActivationPage() {
                 
                 {/* Кнопки действий */}
                 <div className="space-y-3">
-                  <Button 
-                    onClick={handleActivation} 
-                    disabled={
-                      loading || 
-                      (productType === "roblox" && (!nickname.trim() || !(gamepassUrl.trim() || gamepassId.trim()) || !telegram.trim() || !regionalPricingDisabled)) ||
-                      (productType === "fortnite" && (!epicLogin.trim() || !epicPassword.trim() || !telegram.trim())) ||
-                      ((productType === "pubg" || productType === "other") && !telegram.trim())
-                    }
-                    className="w-full h-12 text-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                    size="lg"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Активация...
-                      </>
-                    ) : (
-                      "🎯 Активировать код"
-                    )}
-                  </Button>
+                  {(productType !== "roblox" || robloxFormStep === 2) && (
+                    <Button 
+                      onClick={handleActivation} 
+                      disabled={
+                        loading || 
+                        (productType === "roblox" && (!nickname.trim() || !(gamepassUrl.trim() || gamepassId.trim()) || !telegram.trim() || !regionalPricingDisabled)) ||
+                        (productType === "fortnite" && (!epicLogin.trim() || !epicPassword.trim() || !telegram.trim())) ||
+                        ((productType === "pubg" || productType === "other") && !telegram.trim())
+                      }
+                      className="w-full h-12 text-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                      size="lg"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Активация...
+                        </>
+                      ) : (
+                        "🎯 Активировать код"
+                      )}
+                    </Button>
+                  )}
 
                   <Button 
-                    onClick={() => setStep(1)} 
+                    onClick={() => { setStep(1); setRobloxFormStep(1); }} 
                     variant="outline"
                     className="w-full h-11"
                     disabled={loading}

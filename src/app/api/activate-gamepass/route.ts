@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendNewOrderTelegramNotification } from "@/lib/telegram";
 import { z } from "zod";
 
 const bodySchema = z.object({
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
 
       if (!regionalPricingDisabled) {
         return NextResponse.json(
-          { ok: false, error: "Подтвердите, что Regional Pricing отключен" },
+          { ok: false, error: "Подтвердите, что выставили верную цену и отключили Regional Pricing" },
           { status: 400 }
         );
       }
@@ -158,6 +159,17 @@ export async function POST(request: Request) {
       }
     });
 
+    const notifyGamepassUrl =
+      safeGamepassUrl || (resolvedGamepassId ? `https://www.roblox.com/game-pass/${resolvedGamepassId}` : "-");
+
+    await sendNewOrderTelegramNotification({
+      amount: codeRow.nominal,
+      gamepassUrl: notifyGamepassUrl,
+      orderId: order.id,
+      customerTelegram: order.contact_telegram ?? "-",
+      createdAt: order.created_at,
+    });
+
     await prisma.legacyCode.update({
       where: { id: codeRow.id },
       data: { 
@@ -168,6 +180,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       ok: true, 
+      nominal: codeRow.nominal,
       order: {
         id: order.id,
         short_code: order.short_code,
