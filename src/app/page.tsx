@@ -18,6 +18,8 @@ import {
   Flame,
   Crosshair,
   Shapes,
+  Send,
+  Users,
 } from "lucide-react";
 import { Navigation } from "@/components/navigation";
 import { getRequiredGamepassPrice } from "@/lib/roblox-pricing";
@@ -225,6 +227,38 @@ export default function CodeActivationPage() {
             <p className="text-sm text-gray-600">
               Roblox • Fortnite • PUBG • и другие игры
             </p>
+            <div className="mt-6 flex justify-start">
+              <div className="w-full max-w-md rounded-2xl border border-white/20 bg-slate-900/45 p-4 text-left text-white shadow-[0_0_24px_rgba(59,130,246,0.2)] backdrop-blur-md">
+                <p className="mb-3 text-sm font-semibold tracking-wide text-slate-100">
+                  🌐 Официальное сообщество
+                </p>
+                <p className="mb-3 text-xs text-slate-300">
+                  Следите за новостями и розыгрышами в наших официальных каналах
+                </p>
+                <div className="space-y-2">
+                  <a
+                    href="https://t.me/rbxpass_loothub"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-100 transition-colors hover:bg-white/10"
+                  >
+                    <Send className="h-4 w-4 text-sky-300" />
+                    <span className="font-medium text-slate-200">Telegram:</span>
+                    <span className="text-sky-200 group-hover:text-sky-100">t.me/rbxpass_loothub</span>
+                  </a>
+                  <a
+                    href="https://vk.com/rbxpass_loothub"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-100 transition-colors hover:bg-white/10"
+                  >
+                    <Users className="h-4 w-4 text-blue-300" />
+                    <span className="font-medium text-slate-200">VK:</span>
+                    <span className="text-blue-200 group-hover:text-blue-100">vk.com/rbxpass_loothub</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Progress Bar */}
