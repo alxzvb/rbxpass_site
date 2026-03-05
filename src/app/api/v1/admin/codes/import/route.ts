@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTokenFromHeadersOrCookies, verifyAdminToken } from "@/lib/auth";
+import { isAllowedRobloxNominal } from "@/lib/roblox-pricing";
 import { parse } from "csv-parse/sync";
 import * as XLSX from "xlsx";
 
@@ -52,7 +53,14 @@ export async function POST(request: Request) {
 
   let created = 0;
   for (const row of rows) {
-    if (!row.code || row.code.toLowerCase() === "undefined" || !row.nominal) continue;
+    if (
+      !row.code ||
+      row.code.toLowerCase() === "undefined" ||
+      !row.nominal ||
+      !isAllowedRobloxNominal(row.nominal)
+    ) {
+      continue;
+    }
     try {
       await prisma.legacyCode.upsert({
         where: { code: row.code },

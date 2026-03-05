@@ -22,6 +22,7 @@ import {
   Zap,
   Download
 } from "lucide-react";
+import { ALLOWED_ROBLOX_NOMINALS } from "@/lib/roblox-pricing";
 
 type Code = {
   id: number;
@@ -41,17 +42,19 @@ export default function AdminCodes() {
   
   // Форма для добавления кода
   const [newCode, setNewCode] = useState("");
-  const [newNominal, setNewNominal] = useState(100);
+  const [newNominal, setNewNominal] = useState(ALLOWED_ROBLOX_NOMINALS[0]);
   const [newProductType, setNewProductType] = useState("roblox");
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Форма для генерации кодов
   const [generateCount, setGenerateCount] = useState(10);
-  const [generateNominal, setGenerateNominal] = useState(100);
+  const [generateNominal, setGenerateNominal] = useState(ALLOWED_ROBLOX_NOMINALS[0]);
   const [generatePrefix, setGeneratePrefix] = useState("RBX100");
   const [generateProductType, setGenerateProductType] = useState("roblox");
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+  const [manualCode, setManualCode] = useState("");
+  const [manualLoading, setManualLoading] = useState(false);
   
   const updateGenerateType = (value: string) => {
     setGenerateProductType(value);
@@ -109,7 +112,7 @@ export default function AdminCodes() {
       
       setSuccess("Код успешно добавлен!");
       setNewCode("");
-      setNewNominal(100);
+      setNewNominal(ALLOWED_ROBLOX_NOMINALS[0]);
       setShowAddForm(false);
       loadCodes();
     } catch {
@@ -125,8 +128,8 @@ export default function AdminCodes() {
       return;
     }
     
-    if (generateNominal < 1) {
-      setError("Номинал должен быть больше 0");
+    if (!ALLOWED_ROBLOX_NOMINALS.includes(generateNominal)) {
+      setError("Выберите номинал из разрешенного списка");
       return;
     }
     
@@ -161,6 +164,39 @@ export default function AdminCodes() {
       setError("Ошибка генерации кодов");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markCodeAsUsed = async () => {
+    if (!manualCode.trim()) {
+      setError("Введите код для ручной активации");
+      return;
+    }
+
+    setManualLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch("/api/v1/admin/codes/mark-used", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: manualCode.trim().toUpperCase() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Ошибка ручной активации");
+        return;
+      }
+
+      setSuccess("Код активирован вручную");
+      setManualCode("");
+      loadCodes();
+    } catch {
+      setError("Ошибка ручной активации");
+    } finally {
+      setManualLoading(false);
     }
   };
 
@@ -311,13 +347,21 @@ export default function AdminCodes() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="generate-nominal">Номинал (Robux)</Label>
-                  <Input
-                    id="generate-nominal"
-                    type="number"
-                    value={generateNominal}
-                    onChange={(e) => setGenerateNominal(Number(e.target.value))}
-                    min="1"
-                  />
+                  <Select
+                    value={String(generateNominal)}
+                    onValueChange={(value) => setGenerateNominal(Number(value))}
+                  >
+                    <SelectTrigger id="generate-nominal">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ALLOWED_ROBLOX_NOMINALS.map((nominal) => (
+                        <SelectItem key={nominal} value={String(nominal)}>
+                          {nominal} Robux
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="generate-product-type">Игра</Label>
@@ -393,13 +437,21 @@ export default function AdminCodes() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-nominal">Номинал (Robux)</Label>
-                <Input
-                  id="new-nominal"
-                  type="number"
-                  value={newNominal}
-                  onChange={(e) => setNewNominal(Number(e.target.value))}
-                  min="1"
-                />
+                <Select
+                  value={String(newNominal)}
+                  onValueChange={(value) => setNewNominal(Number(value))}
+                >
+                  <SelectTrigger id="new-nominal">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ALLOWED_ROBLOX_NOMINALS.map((nominal) => (
+                      <SelectItem key={nominal} value={String(nominal)}>
+                        {nominal} Robux
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-product-type">Игра</Label>
@@ -436,6 +488,33 @@ export default function AdminCodes() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ручная активация кода</CardTitle>
+          <CardDescription>
+            Если покупатель прислал код в Telegram, вставьте его и отметьте как активированный.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+              placeholder="RBX100-XXXX-XXXX или FN1000-XXXX-XXXX-X"
+              className="font-mono"
+            />
+            <Button
+              onClick={markCodeAsUsed}
+              disabled={manualLoading || !manualCode.trim()}
+              className="gap-2"
+            >
+              {manualLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Активировать вручную
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

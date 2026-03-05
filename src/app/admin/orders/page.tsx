@@ -18,7 +18,8 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from "lucide-react";
 
 type Order = {
@@ -30,6 +31,9 @@ type Order = {
   gamepass_id: string;
   gamepass_url: string;
   product_type?: string | null;
+  contact_telegram?: string | null;
+  epic_login?: string | null;
+  epic_password?: string | null;
   status: string;
   created_at: string;
 };
@@ -64,33 +68,229 @@ export default function AdminOrders() {
   const [productType, setProductType] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [updatingOrderIds, setUpdatingOrderIds] = useState<Set<number>>(new Set());
+  const [deletingOrderIds, setDeletingOrderIds] = useState<Set<number>>(new Set());
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const params = new URLSearchParams({ q });
-    if (status && status !== "all") {
-      params.append("status", status);
+    try {
+      const params = new URLSearchParams({ q });
+      if (status && status !== "all") {
+        params.append("status", status);
+      }
+      if (productType && productType !== "all") {
+        params.append("productType", productType);
+      }
+      const url = `/api/v1/admin/orders?${params.toString()}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        setError("Ошибка загрузки заказов");
+        return;
+      }
+      const data = await res.json();
+      setOrders(data.orders);
+      setSelectedOrderIds((prev) => {
+        const next = new Set<number>();
+        const availableIds = new Set<number>(data.orders.map((o: Order) => o.id));
+        prev.forEach((id) => {
+          if (availableIds.has(id)) next.add(id);
+        });
+        return next;
+      });
+    } catch {
+      setError("Не удалось загрузить заказы");
+    } finally {
+      setLoading(false);
     }
-    if (productType && productType !== "all") {
-      params.append("productType", productType);
-    }
-    const url = `/api/v1/admin/orders?${params.toString()}`;
-    const res = await fetch(url);
-    if (!res.ok) { setError("Ошибка авторизации"); return; }
-    const data = await res.json();
-    setOrders(data.orders);
-    setLoading(false);
   }, [q, status, productType]);
 
   async function updateStatus(id: number, s: string) {
-    setLoading(true);
-    await fetch(`/api/v1/admin/orders/${id}`, { 
-      method: "PATCH", 
-      headers: { "Content-Type": "application/json" }, 
-      body: JSON.stringify({ status: s }) 
+    const current = orders.find((order) => order.id === id);
+    if (!current || current.status === s) return;
+
+    const previousStatus = current.status;
+    setError(null);
+    setUpdatingOrderIds((prev) => new Set(prev).add(id));
+    setOrders((prev) =>
+      prev.map((order) => (order.id === id ? { ...order, status: s } : order))
+    );
+
+    try {
+      const res = await fetch(`/api/v1/admin/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: s }),
+      });
+      if (!res.ok) throw new Error("patch_failed");
+    } catch {
+      setOrders((prev) =>
+        prev.map((order) => (order.id === id ? { ...order, status: previousStatus } : order))
+      );
+      setError(`Не удалось обновить статус заказа #${id}`);
+    } finally {
+      setUpdatingOrderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  function toggleOrderSelection(id: number, checked: boolean) {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
     });
-    load();
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedOrderIds(new Set(orders.map((order) => order.id)));
+      return;
+    }
+    setSelectedOrderIds(new Set());
+  }
+
+  async function markSelectedAsProcessing() {
+    const ids = Array.from(selectedOrderIds);
+    if (ids.length === 0) return;
+
+    const previousStatuses = new Map<number, string>();
+    orders.forEach((order) => {
+      if (ids.includes(order.id)) {
+        previousStatuses.set(order.id, order.status);
+      }
+    });
+
+    setError(null);
+    setBulkUpdating(true);
+    setUpdatingOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setOrders((prev) =>
+      prev.map((order) =>
+        selectedOrderIds.has(order.id) ? { ...order, status: "processing" } : order
+      )
+    );
+
+    const failedIds: number[] = [];
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const res = await fetch(`/api/v1/admin/orders/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "processing" }),
+          });
+          if (!res.ok) throw new Error("patch_failed");
+        } catch {
+          failedIds.push(id);
+        }
+      })
+    );
+
+    if (failedIds.length > 0) {
+      setOrders((prev) =>
+        prev.map((order) =>
+          failedIds.includes(order.id)
+            ? { ...order, status: previousStatuses.get(order.id) ?? order.status }
+            : order
+        )
+      );
+      setError(`Часть заказов не обновилась (${failedIds.length} шт.)`);
+      setSelectedOrderIds(new Set(failedIds));
+    } else {
+      setSelectedOrderIds(new Set());
+    }
+
+    setUpdatingOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    setBulkUpdating(false);
+  }
+
+  async function deleteOrder(id: number) {
+    if (!confirm(`Удалить заказ #${id}?`)) return;
+
+    const previousOrders = orders;
+
+    setError(null);
+    setDeletingOrderIds((prev) => new Set(prev).add(id));
+    setOrders((prev) => prev.filter((order) => order.id !== id));
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+
+    try {
+      const res = await fetch(`/api/v1/admin/orders/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete_failed");
+    } catch {
+      setOrders(previousOrders);
+      setError(`Не удалось удалить заказ #${id}`);
+    } finally {
+      setDeletingOrderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async function deleteSelectedOrders() {
+    const ids = Array.from(selectedOrderIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Удалить выбранные заказы (${ids.length})?`)) return;
+
+    const previousOrders = orders;
+    setError(null);
+    setBulkDeleting(true);
+    setDeletingOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setOrders((prev) => prev.filter((order) => !selectedOrderIds.has(order.id)));
+    setSelectedOrderIds(new Set());
+
+    const failedIds: number[] = [];
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const res = await fetch(`/api/v1/admin/orders/${id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("delete_failed");
+        } catch {
+          failedIds.push(id);
+        }
+      })
+    );
+
+    if (failedIds.length > 0) {
+      setOrders(previousOrders);
+      setError(`Часть заказов не удалилась (${failedIds.length} шт.)`);
+      setSelectedOrderIds(new Set(failedIds));
+    }
+
+    setDeletingOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    setBulkDeleting(false);
   }
 
   useEffect(() => { load(); }, [load]);
@@ -102,6 +302,8 @@ export default function AdminOrders() {
     done: orders.filter(o => o.status === "done").length,
     error: orders.filter(o => o.status === "error").length,
   };
+
+  const allSelected = orders.length > 0 && orders.every((order) => selectedOrderIds.has(order.id));
 
   return (
     <div className="space-y-6">
@@ -290,6 +492,25 @@ export default function AdminOrders() {
           <CardDescription>
             {orders.length} заказ(ов) найдено
           </CardDescription>
+          <div className="pt-2 flex flex-wrap gap-2">
+            <Button
+              onClick={markSelectedAsProcessing}
+              disabled={bulkUpdating || bulkDeleting || selectedOrderIds.size === 0}
+              className="gap-2"
+            >
+              {bulkUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Перевести выбранные в обработку
+            </Button>
+            <Button
+              onClick={deleteSelectedOrders}
+              disabled={bulkDeleting || bulkUpdating || selectedOrderIds.size === 0}
+              variant="destructive"
+              className="gap-2"
+            >
+              {bulkDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Удалить выбранные
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -307,11 +528,20 @@ export default function AdminOrders() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={(e) => toggleSelectAll(e.target.checked)}
+                        aria-label="Выбрать все заказы на странице"
+                      />
+                    </TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>Код</TableHead>
                     <TableHead>Пользователь</TableHead>
                     <TableHead>Игра</TableHead>
                     <TableHead>GamePass</TableHead>
+                    <TableHead>Данные</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead>Дата</TableHead>
                     <TableHead>Действия</TableHead>
@@ -321,9 +551,24 @@ export default function AdminOrders() {
                   {orders.map((order) => {
                     const statusInfo = statusConfig[order.status as keyof typeof statusConfig];
                     const StatusIcon = statusInfo?.icon || Clock;
+                    const hasGamepassUrl = Boolean(order.gamepass_url && order.gamepass_url !== "-");
+                    const hasGamepassId = Boolean(order.gamepass_id && order.gamepass_id !== "-");
+                    const gamepassHref = hasGamepassUrl
+                      ? order.gamepass_url
+                      : hasGamepassId
+                        ? `https://www.roblox.com/game-pass/${order.gamepass_id}`
+                        : null;
                     
                     return (
                       <TableRow key={order.id}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedOrderIds.has(order.id)}
+                            onChange={(e) => toggleOrderSelection(order.id, e.target.checked)}
+                            aria-label={`Выбрать заказ #${order.id}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">#{order.id}</TableCell>
                         <TableCell>
                           <div className="space-y-1">
@@ -341,15 +586,41 @@ export default function AdminOrders() {
                           <Badge variant="outline">{order.product_type ?? "roblox"}</Badge>
                         </TableCell>
                         <TableCell>
+                          {gamepassHref ? (
                           <a 
-                            href={order.gamepass_url} 
+                            href={gamepassHref}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
                           >
-                            {order.gamepass_id}
+                            {hasGamepassId ? order.gamepass_id : "Открыть"}
                             <ExternalLink className="w-3 h-3" />
                           </a>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1 text-sm">
+                            {order.contact_telegram && (
+                              <div className="text-gray-700">
+                                <span className="font-medium">TG:</span> {order.contact_telegram}
+                              </div>
+                            )}
+                            {order.epic_login && (
+                              <div className="text-gray-700">
+                                <span className="font-medium">Epic:</span> {order.epic_login}
+                              </div>
+                            )}
+                            {order.epic_password && (
+                              <div className="text-gray-500 text-xs">
+                                <span className="font-medium">Пароль:</span> ••••••••
+                              </div>
+                            )}
+                            {!order.contact_telegram && !order.epic_login && (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge className={`${statusInfo.color} gap-1`}>
@@ -361,20 +632,32 @@ export default function AdminOrders() {
                           {new Date(order.created_at).toLocaleString("ru-RU")}
                         </TableCell>
                         <TableCell>
-                          <Select 
-                            value={order.status} 
-                            onValueChange={(value) => updateStatus(order.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="queued">В очереди</SelectItem>
-                              <SelectItem value="processing">В обработке</SelectItem>
-                              <SelectItem value="done">Выполнен</SelectItem>
-                              <SelectItem value="error">Ошибка</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2">
+                            <Select 
+                              value={order.status} 
+                              onValueChange={(value) => updateStatus(order.id, value)}
+                              disabled={updatingOrderIds.has(order.id) || deletingOrderIds.has(order.id)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="queued">В очереди</SelectItem>
+                                <SelectItem value="processing">В обработке</SelectItem>
+                                <SelectItem value="done">Выполнен</SelectItem>
+                                <SelectItem value="error">Ошибка</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={deletingOrderIds.has(order.id) || updatingOrderIds.has(order.id)}
+                              onClick={() => deleteOrder(order.id)}
+                              title="Удалить заказ"
+                            >
+                              {deletingOrderIds.has(order.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

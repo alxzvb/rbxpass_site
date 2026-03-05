@@ -15,9 +15,14 @@ import {
 } from "lucide-react";
 import { Navigation } from "@/components/navigation";
 import { useState } from "react";
+import { ROBLOX_GAMEPASS_PRICE_MAP } from "@/lib/roblox-pricing";
+import Link from "next/link";
 
 export default function InstructionsPage() {
   const [copiedStep, setCopiedStep] = useState<number | null>(null);
+  const priceRows = Object.entries(ROBLOX_GAMEPASS_PRICE_MAP)
+    .map(([nominal, gamepassPrice]) => ({ nominal: Number(nominal), gamepassPrice }))
+    .sort((a, b) => a.nominal - b.nominal);
 
   const copyToClipboard = (text: string, step: number) => {
     navigator.clipboard.writeText(text);
@@ -67,15 +72,15 @@ export default function InstructionsPage() {
     },
     {
       number: 6,
-      title: "Отключите региональную цену",
-      description: "В Configure → Sales выключите Regional Pricing (Региональная цена), чтобы цена была одинаковой для всех регионов",
+      title: "❗ Обязательно отключите региональную цену",
+      description: "В Configure → Sales ОБЯЗАТЕЛЬНО выключите Regional Pricing (Региональная цена), чтобы цена была одинаковой для всех регионов.",
       icon: Settings,
       color: "bg-indigo-100 text-indigo-600"
     },
     {
       number: 7,
       title: "Скопируйте ссылку на GamePass",
-      description: "После сохранения скопируйте ссылку из адресной строки браузера. Она должна выглядеть примерно так:",
+      description: "После сохранения откройте страницу GamePass и скопируйте ссылку из адресной строки. Pass ID — это цифры после /game-pass/ и до следующего /. Пример: /game-pass/123456789/Donation -> Pass ID: 123456789.",
       icon: LinkIcon,
       color: "bg-red-100 text-red-600",
       example: "https://www.roblox.com/game-pass/123456789/Donation"
@@ -114,7 +119,7 @@ export default function InstructionsPage() {
               Следуйте инструкции ниже, чтобы создать GamePass и активировать ваш код
             </p>
             <div className="mt-4 flex justify-center">
-              <Button asChild variant="outline">
+              <Button asChild className="h-12 px-6 text-base font-semibold bg-red-600 hover:bg-red-700 shadow-lg">
                 <a
                   href="https://rutube.ru/video/a2652268ba8a379f99c77eecb5ac7745/"
                   target="_blank"
@@ -132,21 +137,22 @@ export default function InstructionsPage() {
           <div className="space-y-6">
             {steps.map((step) => {
               const Icon = step.icon;
+              const isRegionalPricingStep = step.number === 6;
               return (
-                <Card key={step.number} className="shadow-lg">
+                <Card key={step.number} className={`shadow-lg ${isRegionalPricingStep ? "border-red-300 bg-red-50/40" : ""}`}>
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${step.color}`}>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isRegionalPricingStep ? "bg-red-100 text-red-600" : step.color}`}>
                         <Icon className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <Badge variant="outline" className="text-lg font-bold">
+                          <Badge variant="outline" className={`text-lg font-bold ${isRegionalPricingStep ? "border-red-300 text-red-700" : ""}`}>
                             Шаг {step.number}
                           </Badge>
-                          <CardTitle className="text-xl">{step.title}</CardTitle>
+                          <CardTitle className={`text-xl ${isRegionalPricingStep ? "text-red-700" : ""}`}>{step.title}</CardTitle>
                         </div>
-                        <CardDescription className="text-base">
+                        <CardDescription className={`text-base ${isRegionalPricingStep ? "text-red-700" : ""}`}>
                           {step.description}
                         </CardDescription>
                       </div>
@@ -203,6 +209,9 @@ export default function InstructionsPage() {
               <p className="text-blue-100 mb-6">
                 Следуйте инструкции выше, создайте GamePass и активируйте ваш код
               </p>
+              <Button asChild size="lg" className="bg-white text-blue-700 hover:bg-blue-50 font-semibold px-8">
+                <Link href="/">Начать активацию</Link>
+              </Button>
             </CardContent>
           </Card>
 
@@ -227,82 +236,12 @@ export default function InstructionsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 101</td>
-                      <td className="border border-gray-300 px-4 py-2">145</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 201</td>
-                      <td className="border border-gray-300 px-4 py-2">287</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 301</td>
-                      <td className="border border-gray-300 px-4 py-2">430</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 401</td>
-                      <td className="border border-gray-300 px-4 py-2">573</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 501</td>
-                      <td className="border border-gray-300 px-4 py-2">716</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 601</td>
-                      <td className="border border-gray-300 px-4 py-2">859</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 701</td>
-                      <td className="border border-gray-300 px-4 py-2">1001</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 801</td>
-                      <td className="border border-gray-300 px-4 py-2">1144</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 901</td>
-                      <td className="border border-gray-300 px-4 py-2">1287</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 1001</td>
-                      <td className="border border-gray-300 px-4 py-2">1430</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 1201</td>
-                      <td className="border border-gray-300 px-4 py-2">1716</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 1401</td>
-                      <td className="border border-gray-300 px-4 py-2">2001</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 1601</td>
-                      <td className="border border-gray-300 px-4 py-2">2287</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 1701</td>
-                      <td className="border border-gray-300 px-4 py-2">2430</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 2001</td>
-                      <td className="border border-gray-300 px-4 py-2">2859</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 2501</td>
-                      <td className="border border-gray-300 px-4 py-2">3573</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 3001</td>
-                      <td className="border border-gray-300 px-4 py-2">4287</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 4501</td>
-                      <td className="border border-gray-300 px-4 py-2">6430</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50">
-                      <td className="border border-gray-300 px-4 py-2">Roblox 10001</td>
-                      <td className="border border-gray-300 px-4 py-2">14287</td>
-                    </tr>
+                    {priceRows.map((row) => (
+                      <tr key={row.nominal} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2">Roblox {row.nominal}</td>
+                        <td className="border border-gray-300 px-4 py-2">{row.gamepassPrice}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

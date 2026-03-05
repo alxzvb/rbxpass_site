@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTokenFromHeadersOrCookies, verifyAdminToken } from "@/lib/auth";
+import { isAllowedRobloxNominal } from "@/lib/roblox-pricing";
 import { z } from "zod";
 import crypto from "crypto";
 
@@ -22,7 +23,9 @@ export async function POST(request: Request) {
 
   const schema = z.object({
     count: z.number().min(1).max(1000),
-    nominal: z.number().min(1),
+    nominal: z.number().refine((value) => isAllowedRobloxNominal(value), {
+      message: "Номинал не входит в разрешенный список",
+    }),
     prefix: z
       .string()
       .min(2)

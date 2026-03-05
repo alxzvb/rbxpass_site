@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTokenFromHeadersOrCookies, verifyAdminToken } from "@/lib/auth";
+import { isAllowedRobloxNominal } from "@/lib/roblox-pricing";
 import { z } from "zod";
 
 // GET - получить все коды
@@ -26,7 +27,9 @@ export async function POST(request: Request) {
 
   const schema = z.object({
     code: z.string().min(1),
-    nominal: z.number().min(1),
+    nominal: z.number().refine((value) => isAllowedRobloxNominal(value), {
+      message: "Номинал не входит в разрешенный список",
+    }),
     status: z.enum(["active", "used"]).default("active"),
     productType: z.enum(["roblox", "fortnite", "pubg", "other"]).optional().default("roblox"),
   });
